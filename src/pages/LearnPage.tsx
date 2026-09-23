@@ -13,6 +13,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useTypingEngine } from '../hooks/useTypingEngine';
 import { TypingArea } from '../components/typing/TypingArea';
 import { VirtualKeyboard } from '../components/typing/VirtualKeyboard';
+import { TiltCard } from '../components/ui/TiltCard';
 
 export const LearnPage: React.FC = () => {
   const { settings } = useSettings();
@@ -304,11 +305,12 @@ export const LearnPage: React.FC = () => {
               const isCompleted = prog?.completed;
 
               return (
-                <div
+                <TiltCard
                   key={lesson.id}
+                  maxTilt={6}
                   onClick={() => handleSelectLesson(lesson)}
                   className={`
-                    group p-5 rounded-3xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-4
+                    group p-5 border transition-all cursor-pointer select-none flex flex-col justify-between gap-4 card-3d
                     ${
                       isCompleted
                         ? 'bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--color-primary)]/60'
@@ -361,7 +363,7 @@ export const LearnPage: React.FC = () => {
                       {isCompleted ? 'Practice Again' : 'Start Lesson'} →
                     </span>
                   </div>
-                </div>
+                </TiltCard>
               );
             })}
           </div>

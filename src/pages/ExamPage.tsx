@@ -387,7 +387,7 @@ export const ExamPage: React.FC = () => {
           <div className="flex items-center justify-end pt-4 border-t border-[var(--border-color)]">
             <button
               onClick={startExam}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[var(--color-primary)] text-[var(--bg-main)] font-extrabold text-sm shadow-xl shadow-[var(--color-primary)]/20 hover:opacity-90"
+              className="btn-3d flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[var(--color-primary)] text-[var(--bg-main)] font-extrabold text-sm shadow-xl shadow-[var(--color-primary)]/20 hover:opacity-90"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>Begin Official Examination</span>

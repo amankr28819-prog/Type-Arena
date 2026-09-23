@@ -12,7 +12,8 @@ import {
   calculateRawWpm,
   calculateNetWpm,
   calculateAccuracy,
-  calculateConsistency
+  calculateConsistency,
+  calculateBurstSpeed
 } from '../lib/metrics';
 import { soundEngine } from '../lib/audio';
 import { storage } from '../lib/storage';
@@ -207,6 +208,8 @@ export function useTypingEngine({
       if (typed !== exp) mistypedWords.push(exp);
     });
 
+    const finalBurst = calculateBurstSpeed(keystrokesRef.current);
+
     const result: TestResult = {
       id: `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: Date.now(),
@@ -216,6 +219,7 @@ export function useTypingEngine({
       wpm: finalWpm,
       rawWpm: finalRaw,
       netWpm: finalNet,
+      burstWpm: finalBurst,
       accuracy: finalAccuracy,
       consistency: finalConsistency,
       characterStats: finalStats,
@@ -250,11 +254,22 @@ export function useTypingEngine({
     onTestComplete
   ]);
 
-  // Interval timer for live updates with timestamp drift compensation
+  // Interval timer for live updates with timestamp drift compensation and tab-switch safety
   useEffect(() => {
     if (!isActive || isFinished) return;
 
     let lastRecordedSec = 0;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) return;
+      if (!startTimeRef.current || !isActive || isFinished) return;
+      const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+      if (mode === 'time' && targetDuration > 0 && exactElapsed >= targetDuration) {
+        finishTest(targetDuration);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     timerIntervalRef.current = window.setInterval(() => {
       if (!startTimeRef.current) return;
@@ -291,6 +306,7 @@ export function useTypingEngine({
     }, 50);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
@@ -487,6 +503,7 @@ export function useTypingEngine({
     remainingSeconds,
     wpm: currentWpm,
     rawWpm: currentRawWpm,
+    burstWpm: calculateBurstSpeed(keystrokesRef.current),
     accuracy: currentAccuracy,
     errors: currentErrors,
     timeline: timelineRef.current,

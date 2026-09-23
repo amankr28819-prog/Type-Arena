@@ -13,6 +13,8 @@ import { storage } from '../lib/storage';
 import type { TestResult, PersonalBests, KeyAnalytics, BigramAnalytics } from '../types';
 import { VirtualKeyboard } from '../components/typing/VirtualKeyboard';
 
+import { TiltCard } from '../components/ui/TiltCard';
+
 export const StatsPage: React.FC = () => {
   const [history, setHistory] = useState<TestResult[]>([]);
   const [pbs, setPbs] = useState<PersonalBests>(storage.getPersonalBests());
@@ -133,7 +135,7 @@ export const StatsPage: React.FC = () => {
 
       {/* Aggregate Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1">
+        <TiltCard maxTilt={8} className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1 card-3d">
           <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-sub)] flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-[var(--color-primary)]" />
             Avg WPM
@@ -142,9 +144,9 @@ export const StatsPage: React.FC = () => {
             {avgWpm}
           </span>
           <span className="text-[11px] text-[var(--text-sub)]">Peak: {maxWpm} WPM</span>
-        </div>
+        </TiltCard>
 
-        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1">
+        <TiltCard maxTilt={8} className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1 card-3d">
           <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-sub)] flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5 text-[var(--color-correct)]" />
             Avg Accuracy
@@ -153,9 +155,9 @@ export const StatsPage: React.FC = () => {
             {avgAccuracy}%
           </span>
           <span className="text-[11px] text-[var(--text-sub)]">Precision index</span>
-        </div>
+        </TiltCard>
 
-        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1">
+        <TiltCard maxTilt={8} className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1 card-3d">
           <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-sub)] flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-amber-400" />
             Tests Completed
@@ -166,9 +168,9 @@ export const StatsPage: React.FC = () => {
           <span className="text-[11px] text-[var(--text-sub)]">
             {Math.round(totalCharacters / 5)} words typed
           </span>
-        </div>
+        </TiltCard>
 
-        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1">
+        <TiltCard maxTilt={8} className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col gap-1 card-3d">
           <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-sub)] flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-indigo-400" />
             Typing Time
@@ -177,7 +179,7 @@ export const StatsPage: React.FC = () => {
             {Math.round(totalTimeSeconds / 60)}m
           </span>
           <span className="text-[11px] text-[var(--text-sub)]">{totalTimeSeconds} seconds total</span>
-        </div>
+        </TiltCard>
       </div>
 
       {/* Personal Bests Section */}

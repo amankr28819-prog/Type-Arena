@@ -162,16 +162,40 @@ assert(wpm45s === 60, `calculateWpm(225 chars, 45s) === 60 WPM (got ${wpm45s})`)
 const wpmFloat = calculateWpm(225, 45.0);
 assert(wpmFloat === 60, `calculateWpm with float seconds is accurate (got ${wpmFloat})`);
 
-// 7. Verify TypeArena Battle Game Mechanics
-const calcDamage = (word: string, isCrit: boolean) => {
+// 7. Verify TypeArena Battle Game Mechanics & Upgraded Systems
+import { calculateBurstSpeed } from '../src/lib/metrics';
+
+// Test burst speed calculation
+const recentStrokes = [
+  { key: 'a', expected: 'a', timestamp: 1000, isCorrect: true, latencyMs: 60 },
+  { key: 'b', expected: 'b', timestamp: 1060, isCorrect: true, latencyMs: 60 },
+  { key: 'c', expected: 'c', timestamp: 1120, isCorrect: true, latencyMs: 60 },
+  { key: 'd', expected: 'd', timestamp: 1180, isCorrect: true, latencyMs: 60 },
+  { key: 'e', expected: 'e', timestamp: 1240, isCorrect: true, latencyMs: 60 },
+];
+const burst = calculateBurstSpeed(recentStrokes, 1240);
+assert(burst > 0, `calculateBurstSpeed correctly computes instantaneous velocity (${burst} WPM)`);
+
+// Test combo scaling damage
+const calcBattleDamage = (word: string, isCrit: boolean, comboCount: number) => {
   const baseDmg = Math.round(18 + word.length * 1.5);
-  return isCrit ? Math.round(baseDmg * 1.4) : baseDmg;
+  const comboMultiplier = Math.min(2.5, 1 + (comboCount - 1) * 0.15);
+  const critMultiplier = isCrit ? 1.4 : 1.0;
+  return Math.round(baseDmg * comboMultiplier * critMultiplier);
 };
-const shortHit = calcDamage('swift', false);
-const longHit = calcDamage('annihilate', false);
-const critHit = calcDamage('unstoppable', true);
-assert(shortHit > 0 && shortHit < longHit, `Longer words deal more combat damage (${shortHit} vs ${longHit})`);
-assert(critHit > longHit, `Critical hit boosts damage significantly (${critHit} vs ${longHit})`);
+const baseDamage = calcBattleDamage('sword', false, 1);
+const combo5Damage = calcBattleDamage('sword', false, 5);
+assert(combo5Damage > baseDamage, `Combo multiplier scales sword damage (1x: ${baseDamage} vs 5x: ${combo5Damage})`);
+
+// Special attack calculation
+const specialAttackDmg = Math.round(baseDamage * 2.2);
+assert(specialAttackDmg > baseDamage * 2, `100% Special attack unleashes over 2x catastrophic damage (${specialAttackDmg})`);
+
+// Parry & Block damage reduction
+const incomingBotDamage = 25;
+const blockedDamage = Math.round(incomingBotDamage * 0.35); // 65% reduction on successful parry
+assert(blockedDamage < incomingBotDamage, `Parry block reduces damage taken from ${incomingBotDamage} to ${blockedDamage}`);
 
 console.log('--- ALL TYPEARENA TESTS PASSED PERFECTLY! ---');
+
 

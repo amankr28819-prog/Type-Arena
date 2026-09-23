@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
+import { soundEngine } from '../../lib/audio';
 
 export type NavTab = 'home' | 'learn' | 'practice' | 'exam' | 'games' | 'stats' | 'settings';
 
@@ -81,12 +82,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             return (
               <button
                 key={item.id}
-                onClick={() => onTabChange(item.id as NavTab)}
+                onClick={() => {
+                  soundEngine.playButtonClick();
+                  onTabChange(item.id as NavTab);
+                }}
                 className={`
-                  flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all
+                  flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer
                   ${
                     isActive
-                      ? 'bg-[var(--color-primary)] text-[var(--bg-main)] shadow-sm'
+                      ? 'bg-[var(--color-primary)] text-[var(--bg-main)] shadow-sm btn-3d'
                       : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
                   }
                 `}
@@ -102,8 +106,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2">
           {/* Theme Quick Switcher Button */}
           <button
-            onClick={onOpenThemeModal}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-main)] transition-all"
+            onClick={() => {
+              soundEngine.playButtonClick();
+              onOpenThemeModal();
+            }}
+            className="btn-3d flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-main)] transition-all cursor-pointer"
             title="Choose Theme or Build Custom Theme"
           >
             <Palette className="w-3.5 h-3.5 text-[var(--color-primary)]" />
@@ -112,8 +119,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Sound Toggle */}
           <button
-            onClick={toggleMute}
-            className="p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] transition-all"
+            onClick={() => {
+              soundEngine.playButtonClick();
+              toggleMute();
+            }}
+            className="btn-3d p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] transition-all cursor-pointer"
             title={settings.soundProfile === 'off' ? 'Sound: Muted (Click to enable)' : `Sound: ${settings.soundProfile}`}
           >
             {settings.soundProfile === 'off' ? (

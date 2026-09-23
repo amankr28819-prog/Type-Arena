@@ -179,16 +179,16 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
               const heatBg = getHeatmapColor(item.key.toLowerCase());
 
               // State-dependent classes
-              let stateClasses = 'bg-[var(--key-bg)] text-[var(--key-text)] border border-[var(--border-color)] hover:border-[var(--text-sub)]';
+              let stateClasses = 'bg-[var(--key-bg)] text-[var(--key-text)] border border-[var(--border-color)] hover:border-[var(--text-sub)] keycap-3d';
 
               if (isMatchCurrent) {
                 if (isError) {
-                  stateClasses = 'bg-[var(--color-error)] text-white scale-105 shadow-lg shadow-[var(--color-error)]/40 border-transparent animate-pulse';
+                  stateClasses = 'bg-[var(--color-error)] text-white scale-98 shadow-md shadow-[var(--color-error)]/40 border-transparent animate-pulse keycap-3d-active';
                 } else {
-                  stateClasses = 'bg-[var(--key-active)] text-white scale-105 shadow-lg shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)]';
+                  stateClasses = 'bg-[var(--key-active)] text-white scale-98 shadow-md shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)] keycap-3d-active';
                 }
               } else if (isMatchNext) {
-                stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/50';
+                stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/50 keycap-3d';
               }
 
               return (

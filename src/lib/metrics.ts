@@ -147,3 +147,24 @@ export function evaluateExam(
 
   return { passed, reasons };
 }
+
+export function calculateBurstSpeed(keystrokes: KeystrokeEvent[]): number {
+  if (keystrokes.length < 5) return 0;
+  let maxBurst = 0;
+  const windowSize = Math.min(15, keystrokes.length);
+
+  for (let i = windowSize - 1; i < keystrokes.length; i++) {
+    const win = keystrokes.slice(i - windowSize + 1, i + 1);
+    const correctCount = win.filter((k) => k.isCorrect).length;
+    const windowDurationMs = win.reduce((sum, k) => sum + Math.max(15, k.latencyMs), 0);
+    if (windowDurationMs > 100) {
+      const durationMin = windowDurationMs / 1000 / 60;
+      const burstWpm = (correctCount / 5) / durationMin;
+      if (burstWpm > maxBurst && isFinite(burstWpm)) {
+        maxBurst = Math.round(burstWpm);
+      }
+    }
+  }
+
+  return Math.min(300, maxBurst);
+}

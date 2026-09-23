@@ -87,6 +87,7 @@ export interface TestResult {
   wpm: number;
   rawWpm: number;
   netWpm: number;
+  burstWpm?: number;
   accuracy: number;
   consistency: number;
   characterStats: CharacterStats;
