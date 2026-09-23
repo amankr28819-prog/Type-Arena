@@ -341,4 +341,113 @@
   box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.6), 0 30px 60px rgba(0, 0, 0, 0.8);
 }
 
+/* Warrior Movement & State Keyframes */
+@keyframes warriorWalk {
+  0% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(2deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-4px) rotate(-2deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.animate-warrior-walk {
+  animation: warriorWalk 0.55s ease-in-out infinite;
+}
+
+@keyframes warriorRun {
+  0% { transform: translateY(0) rotate(2deg) skewX(2deg); }
+  25% { transform: translateY(-7px) rotate(4deg) skewX(4deg); }
+  50% { transform: translateY(0) rotate(1deg) skewX(2deg); }
+  75% { transform: translateY(-7px) rotate(-1deg) skewX(0deg); }
+  100% { transform: translateY(0) rotate(2deg) skewX(2deg); }
+}
+
+.animate-warrior-run {
+  animation: warriorRun 0.4s ease-in-out infinite;
+}
+
+@keyframes warriorTurn {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(0.2) translateY(-2px); }
+  100% { transform: scaleX(1); }
+}
+
+.animate-warrior-turn {
+  animation: warriorTurn 0.25s ease-in-out;
+}
+
+@keyframes warriorAnticipation {
+  0% { transform: translateX(0) rotate(0deg); }
+  100% { transform: translateX(-18px) rotate(-8deg) scale(1.02); }
+}
+
+.animate-warrior-anticipation {
+  animation: warriorAnticipation 0.2s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes warriorRecovery {
+  0% { transform: translateX(35px) rotate(8deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.animate-warrior-recovery {
+  animation: warriorRecovery 0.3s ease-out forwards;
+}
+
+@keyframes warriorStagger {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-16px) rotate(-4deg); }
+  50% { transform: translateX(-8px) rotate(2deg); }
+  75% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-warrior-stagger {
+  animation: warriorStagger 0.45s ease-in-out;
+}
+
+/* Natural Secondary Motion Physics */
+@keyframes hairSecondaryMotion {
+  0%, 100% { transform: rotate(0deg) skewX(0deg); }
+  33% { transform: rotate(3.5deg) skewX(2deg); }
+  66% { transform: rotate(-2.5deg) skewX(-1.5deg); }
+}
+
+.warrior-hair-secondary {
+  transform-origin: 120px 50px;
+  animation: hairSecondaryMotion 2.4s ease-in-out infinite;
+}
+
+@keyframes bustSecondaryMotion {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(1.2px) scaleY(1.02); }
+}
+
+.warrior-bust-secondary {
+  transform-origin: 120px 130px;
+  animation: bustSecondaryMotion 1.8s ease-in-out infinite;
+}
+
+@keyframes capePhysics {
+  0%, 100% { transform: skewX(0deg) scaleX(1); }
+  40% { transform: skewX(4deg) scaleX(1.04); }
+  80% { transform: skewX(-2deg) scaleX(0.98); }
+}
+
+.warrior-cape-physics {
+  transform-origin: 100px 120px;
+  animation: capePhysics 2.8s ease-in-out infinite;
+}
+
+@keyframes sashSecondary {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(5deg); }
+}
+
+.warrior-sash-secondary {
+  transform-origin: 138px 165px;
+  animation: sashSecondary 2s ease-in-out infinite;
+}
+
+
 
