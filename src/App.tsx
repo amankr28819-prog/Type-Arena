@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { Navbar, type NavTab } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
-import { ThemeSelectorModal } from './components/themes/ThemeSelectorModal';
+import { ThemeStudioModal } from './components/ui3d/ThemeStudioModal';
+import { AmbientEnvironment } from './components/ui3d/AmbientEnvironment';
+import { PageTransition } from './components/ui3d/PageTransition';
 import { HomePage } from './pages/HomePage';
 import { LearnPage } from './pages/LearnPage';
 import { PracticePage } from './pages/PracticePage';
@@ -16,6 +18,7 @@ import { cleanupCharacterStudioData } from './lib/storage';
 function AppContent() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const { settings } = useSettings();
 
   // One-time cleanup of legacy character data
   useEffect(() => {
@@ -33,7 +36,12 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200">
+    <div
+      className={`min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200 relative overflow-x-hidden intensity-${settings.animationIntensity} depth-${settings.uiDepth}`}
+    >
+      {/* Dynamic 3D Environmental Atmosphere */}
+      <AmbientEnvironment />
+
       {/* Navigation Bar */}
       <Navbar
         activeTab={activeTab}
@@ -47,24 +55,26 @@ function AppContent() {
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
       />
 
-      {/* Main View Area */}
-      <main className="flex-1 flex flex-col justify-start">
-        {activeTab === 'home' && (
-          <HomePage onNavigateToPractice={handleNavigateToPractice} />
-        )}
-        {activeTab === 'learn' && <LearnPage />}
-        {activeTab === 'practice' && (
-          <PracticePage
-            initialMistakeKeys={mistakeKeys}
-            initialMistakeWords={mistakeWords}
-          />
-        )}
-        {activeTab === 'exam' && <ExamPage />}
-        {activeTab === 'games' && <GamesPage />}
-        {activeTab === 'stats' && <StatsPage />}
-        {activeTab === 'settings' && (
-          <SettingsPage onOpenThemeModal={() => setIsThemeModalOpen(true)} />
-        )}
+      {/* Main View Area with Smooth 3D Section Transitions */}
+      <main className="flex-1 flex flex-col justify-start relative z-10">
+        <PageTransition activeKey={activeTab}>
+          {activeTab === 'home' && (
+            <HomePage onNavigateToPractice={handleNavigateToPractice} />
+          )}
+          {activeTab === 'learn' && <LearnPage />}
+          {activeTab === 'practice' && (
+            <PracticePage
+              initialMistakeKeys={mistakeKeys}
+              initialMistakeWords={mistakeWords}
+            />
+          )}
+          {activeTab === 'exam' && <ExamPage />}
+          {activeTab === 'games' && <GamesPage />}
+          {activeTab === 'stats' && <StatsPage />}
+          {activeTab === 'settings' && (
+            <SettingsPage onOpenThemeModal={() => setIsThemeModalOpen(true)} />
+          )}
+        </PageTransition>
       </main>
 
       {/* Footer */}
@@ -73,8 +83,8 @@ function AppContent() {
         onOpenThemes={() => setIsThemeModalOpen(true)}
       />
 
-      {/* Theme Selector / Builder Modal */}
-      <ThemeSelectorModal
+      {/* 3D Theme Studio Modal */}
+      <ThemeStudioModal
         isOpen={isThemeModalOpen}
         onClose={() => setIsThemeModalOpen(false)}
       />

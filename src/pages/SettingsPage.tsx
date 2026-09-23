@@ -8,12 +8,15 @@ import {
   Download,
   Upload,
   Check,
-  AlertCircle
+  AlertCircle,
+  Box,
+  Sparkles,
+  Layers
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
 import { storage } from '../lib/storage';
-import type { CaretStyle, LayoutType, SoundProfile, Difficulty } from '../types';
+import type { CaretStyle, LayoutType, SoundProfile, Difficulty, UiDepth, AnimationIntensity, ThemePreset } from '../types';
 import { soundEngine } from '../lib/audio';
 
 interface SettingsPageProps {
@@ -317,9 +320,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onOpenThemeModal }) 
           </div>
           <button
             onClick={onOpenThemeModal}
-            className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--bg-main)] text-xs font-bold shadow-md"
+            className="px-4 py-2.5 rounded-xl bg-[var(--color-primary)] text-[var(--bg-main)] text-xs font-bold btn-3d-primary shadow-md flex items-center gap-1.5"
           >
-            Browse 24+ Themes
+            <span>Browse 84+ Themes</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/20 uppercase font-mono tracking-wider">3D Studio</span>
           </button>
         </div>
 
@@ -425,7 +429,144 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onOpenThemeModal }) 
         </div>
       </div>
 
-      {/* 4. LOCAL DATA MANAGEMENT (EXPORT, IMPORT, RESET) */}
+      {/* 4. 3D INTERACTIVE ENVIRONMENT & IMMERSION */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md flex flex-col gap-6">
+        <div>
+          <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
+            <Box className="w-5 h-5 text-[var(--color-primary)]" />
+            3D Interface Depth & Atmospheric Motion
+          </h2>
+          <p className="text-xs text-[var(--text-sub)] mt-1">
+            Configure visual dimensionality, tactile 3D button depression, dynamic pointer tilt, and thematic ambient particles.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* UI Depth */}
+          <div className="p-4 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+            <label className="block text-xs font-semibold uppercase text-[var(--text-sub)] mb-2 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+              UI 3D Depth Preset
+            </label>
+            <select
+              value={settings.uiDepth || 'medium'}
+              onChange={(e) => updateSettings({ uiDepth: e.target.value as UiDepth })}
+              className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-main)]"
+            >
+              <option value="none">Flat (2D Classic, no elevation shadows)</option>
+              <option value="subtle">Subtle (Light physical shadows & micro-lift)</option>
+              <option value="medium">Medium (Standard 3D tactile buttons & decks)</option>
+              <option value="deep">Deep (Maximum holographic layers & borders)</option>
+            </select>
+          </div>
+
+          {/* Animation Intensity */}
+          <div className="p-4 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+            <label className="block text-xs font-semibold uppercase text-[var(--text-sub)] mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+              Motion & Animation Speed
+            </label>
+            <select
+              value={settings.animationIntensity || 'medium'}
+              onChange={(e) => updateSettings({ animationIntensity: e.target.value as AnimationIntensity })}
+              className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-main)]"
+            >
+              <option value="off">Off (Zero animations or pulse cycles)</option>
+              <option value="low">Low (Gentle, subdued micro-motion)</option>
+              <option value="medium">Medium (Balanced smooth modern motion)</option>
+              <option value="high">High (Dynamic energetic motion & glows)</option>
+            </select>
+          </div>
+
+          {/* Style Preset */}
+          <div className="p-4 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] sm:col-span-2">
+            <label className="block text-xs font-semibold uppercase text-[var(--text-sub)] mb-2">
+              Atmosphere & Style Mode Preset
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(['minimal', 'balanced', 'immersive', 'futuristic'] as ThemePreset[]).map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    const presetConfigs: Record<ThemePreset, Partial<typeof settings>> = {
+                      minimal: { uiDepth: 'subtle', animationIntensity: 'low', backgroundAtmosphere: 'none', cardTilt: false, glassmorphism: false },
+                      balanced: { uiDepth: 'medium', animationIntensity: 'medium', backgroundAtmosphere: 'subtle', cardTilt: true, glassmorphism: true },
+                      immersive: { uiDepth: 'deep', animationIntensity: 'high', backgroundAtmosphere: 'dynamic', cardTilt: true, glassmorphism: true },
+                      futuristic: { uiDepth: 'deep', animationIntensity: 'high', backgroundAtmosphere: 'dynamic', cardTilt: true, cursorGlow: true, glassmorphism: true }
+                    };
+                    updateSettings({ themePreset: preset, ...presetConfigs[preset] });
+                  }}
+                  className={`p-2.5 rounded-xl border text-xs font-bold capitalize transition-all ${
+                    settings.themePreset === preset
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] shadow-sm'
+                      : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 3D Toggles */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--border-color)]">
+          <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-subtle)] cursor-pointer">
+            <div>
+              <span className="text-xs font-medium text-[var(--text-main)] block">Background Particles & Grids</span>
+              <span className="text-[10px] text-[var(--text-sub)]">Thematic canvas particles, stars & neon grids</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.backgroundAtmosphere !== 'none'}
+              onChange={(e) => updateSettings({ backgroundAtmosphere: e.target.checked ? 'dynamic' : 'none' })}
+              className="w-4 h-4 accent-[var(--color-primary)]"
+            />
+          </label>
+
+          <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-subtle)] cursor-pointer">
+            <div>
+              <span className="text-xs font-medium text-[var(--text-main)] block">Card Pointer Tilt</span>
+              <span className="text-[10px] text-[var(--text-sub)]">Interactive 3D angle perspective on hover</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.cardTilt ?? true}
+              onChange={(e) => updateSettings({ cardTilt: e.target.checked })}
+              className="w-4 h-4 accent-[var(--color-primary)]"
+            />
+          </label>
+
+          <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-subtle)] cursor-pointer">
+            <div>
+              <span className="text-xs font-medium text-[var(--text-main)] block">Glassmorphism Reflections</span>
+              <span className="text-[10px] text-[var(--text-sub)]">Backdrop blur and glass sheen gradients</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.glassmorphism ?? true}
+              onChange={(e) => updateSettings({ glassmorphism: e.target.checked })}
+              className="w-4 h-4 accent-[var(--color-primary)]"
+            />
+          </label>
+
+          <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-subtle)] cursor-pointer">
+            <div>
+              <span className="text-xs font-medium text-[var(--text-main)] block">Interactive Cursor Glow</span>
+              <span className="text-[10px] text-[var(--text-sub)]">Subtle radial neon halo following pointer</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.cursorGlow ?? false}
+              onChange={(e) => updateSettings({ cursorGlow: e.target.checked })}
+              className="w-4 h-4 accent-[var(--color-primary)]"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* 5. LOCAL DATA MANAGEMENT (EXPORT, IMPORT, RESET) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md flex flex-col gap-6">
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">

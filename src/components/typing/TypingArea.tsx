@@ -97,8 +97,8 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       }}
       className={`
         relative w-full max-w-4xl mx-auto rounded-3xl p-6 sm:p-8
-        bg-[var(--bg-surface)] border transition-all cursor-text select-none
-        ${isFocused ? 'border-[var(--color-primary)]/50 ring-2 ring-[var(--color-primary)]/20 shadow-xl' : 'border-[var(--border-color)] opacity-90'}
+        typing-deck-3d cursor-text select-none
+        ${isFocused ? 'ring-2 ring-[var(--color-primary)]/40 border-[var(--color-primary)]' : 'border-[var(--border-color)] opacity-95'}
       `}
     >
       {/* Hidden input to capture keystrokes smoothly across mobile and desktop */}

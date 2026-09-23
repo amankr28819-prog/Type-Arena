@@ -128,7 +128,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl transition-all">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-5 rounded-3xl card-3d border border-[var(--border-color)] shadow-2xl transition-all">
       {/* Keyboard Header / Finger Indicators */}
       {showFingerGuides && (
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-[var(--border-color)] text-xs text-[var(--text-sub)]">

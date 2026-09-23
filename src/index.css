@@ -206,149 +206,246 @@
   animation: slashArc 0.35s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
 }
 
-/* 3D Physical Buttons */
+/* =========================================================================
+   TYPEARENA UNIFIED 3D INTERACTIVE DESIGN SYSTEM
+   ========================================================================= */
+
+/* 1. Global 3D Perspective & Root Lighting */
+:root {
+  --theme-glow: rgba(56, 189, 248, 0.25);
+  --theme-grid: 0;
+  --theme-particles: none;
+  --theme-glass-opacity: 0.85;
+  --depth-shadow-sm: 0 4px 12px -2px rgba(0, 0, 0, 0.35);
+  --depth-shadow-md: 0 12px 28px -6px rgba(0, 0, 0, 0.45), 0 0 20px -4px var(--theme-glow);
+  --depth-shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 0 32px -4px var(--theme-glow);
+  --card-perspective: 1000px;
+}
+
+/* 2. Physical 3D Buttons */
 .btn-3d {
   position: relative;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.4), 0 6px 12px rgba(0, 0, 0, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border-radius: 0.875rem;
+  transition: transform 0.12s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.12s cubic-bezier(0.2, 0.9, 0.3, 1),
+              filter 0.15s ease,
+              border-color 0.15s ease;
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(0, 0, 0, 0.25);
+  transform: translateY(0);
+  user-select: none;
+  cursor: pointer;
 }
 
 .btn-3d:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.4), 0 10px 16px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(0, 0, 0, 0.3), 0 0 16px var(--theme-glow);
+  filter: brightness(1.04);
 }
 
 .btn-3d:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(3px) scale(0.985);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  filter: brightness(0.96);
 }
 
-/* 3D Keyboard Keycaps */
+.btn-3d-primary {
+  background: linear-gradient(180deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 85%, black) 100%);
+  color: var(--bg-main);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.btn-3d-secondary {
+  background: linear-gradient(180deg, var(--bg-subtle) 0%, color-mix(in srgb, var(--bg-subtle) 85%, black) 100%);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+.btn-3d-ghost {
+  background: transparent;
+  color: var(--text-sub);
+  box-shadow: none;
+}
+.btn-3d-ghost:hover {
+  background: var(--bg-subtle);
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+.btn-3d-ghost:active {
+  transform: translateY(1px);
+}
+
+/* 3. Physical 3D Cards & Tilt Surfaces */
+.card-3d {
+  position: relative;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  box-shadow: var(--depth-shadow-md);
+  transform-style: preserve-3d;
+  perspective: var(--card-perspective);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.2s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow: var(--depth-shadow-lg);
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--border-color));
+}
+
+.card-3d-glass {
+  background: color-mix(in srgb, var(--bg-surface) calc(var(--theme-glass-opacity) * 100%), transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* 4. Physical 3D Keyboard Keycaps */
 .keycap-3d {
-  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-  transition: transform 0.06s ease, box-shadow 0.06s ease, background-color 0.1s ease;
+  position: relative;
+  border-radius: 0.5rem;
+  background: linear-gradient(180deg, var(--key-bg) 0%, color-mix(in srgb, var(--key-bg) 85%, black) 100%);
+  color: var(--key-text);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.06s ease, box-shadow 0.06s ease, background-color 0.1s ease, color 0.1s ease;
+  user-select: none;
+}
+
+.keycap-3d:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .keycap-3d:active,
 .keycap-3d-active {
   transform: translateY(3px) !important;
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+  background: var(--key-active) !important;
+  color: var(--bg-main) !important;
+  filter: drop-shadow(0 0 10px var(--key-active));
 }
 
-/* 3D Perspective Battlefield Floor */
-.arena-ground-3d {
-  transform: perspective(700px) rotateX(28deg);
-  transform-origin: center bottom;
-  box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.6), 0 30px 60px rgba(0, 0, 0, 0.8);
+.keycap-3d-guide {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  animation: pulseGuide 1.4s ease-in-out infinite alternate;
 }
 
-/* Warrior Movement & State Keyframes */
-@keyframes warriorWalk {
-  0% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-4px) rotate(2deg); }
-  50% { transform: translateY(0) rotate(0deg); }
-  75% { transform: translateY(-4px) rotate(-2deg); }
-  100% { transform: translateY(0) rotate(0deg); }
+@keyframes pulseGuide {
+  0% { box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.5), 0 0 6px var(--color-primary); }
+  100% { box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.5), 0 0 16px var(--color-primary); }
 }
 
-.animate-warrior-walk {
-  animation: warriorWalk 0.55s ease-in-out infinite;
+/* 5. Central 3D Typing Console Deck */
+.typing-deck-3d {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55), 0 0 35px -8px var(--theme-glow), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-@keyframes warriorRun {
-  0% { transform: translateY(0) rotate(2deg) skewX(2deg); }
-  25% { transform: translateY(-7px) rotate(4deg) skewX(4deg); }
-  50% { transform: translateY(0) rotate(1deg) skewX(2deg); }
-  75% { transform: translateY(-7px) rotate(-1deg) skewX(0deg); }
-  100% { transform: translateY(0) rotate(2deg) skewX(2deg); }
+.typing-deck-3d:focus-within {
+  border-color: color-mix(in srgb, var(--color-primary) 50%, var(--border-color));
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.6), 0 0 45px -4px var(--theme-glow);
 }
 
-.animate-warrior-run {
-  animation: warriorRun 0.4s ease-in-out infinite;
+/* 6. Section & Page Transitions */
+@keyframes sectionEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-@keyframes warriorTurn {
-  0% { transform: scaleX(1); }
-  50% { transform: scaleX(0.2) translateY(-2px); }
-  100% { transform: scaleX(1); }
+@keyframes sectionExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
 }
 
-.animate-warrior-turn {
-  animation: warriorTurn 0.25s ease-in-out;
+.animate-section-enter {
+  animation: sectionEnter 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
-@keyframes warriorAnticipation {
-  0% { transform: translateX(0) rotate(0deg); }
-  100% { transform: translateX(-18px) rotate(-8deg) scale(1.02); }
+.animate-section-exit {
+  animation: sectionExit 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-.animate-warrior-anticipation {
-  animation: warriorAnticipation 0.2s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+@keyframes staggerItem {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-@keyframes warriorRecovery {
-  0% { transform: translateX(35px) rotate(8deg); }
-  100% { transform: translateX(0) rotate(0deg); }
+.animate-stagger-item {
+  animation: staggerItem 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
-.animate-warrior-recovery {
-  animation: warriorRecovery 0.3s ease-out forwards;
+/* 7. Subtle Cyber Grid & Atmosphere */
+.cyber-grid-overlay {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
 }
 
-@keyframes warriorStagger {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-16px) rotate(-4deg); }
-  50% { transform: translateX(-8px) rotate(2deg); }
-  75% { transform: translateX(-3px); }
-  100% { transform: translateX(0); }
+/* 8. Animation Intensity Settings */
+.intensity-off * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
 }
 
-.animate-warrior-stagger {
-  animation: warriorStagger 0.45s ease-in-out;
+.intensity-low .card-3d:hover {
+  transform: translateY(-1px);
+}
+.intensity-low .btn-3d:hover {
+  transform: translateY(-1px);
 }
 
-/* Natural Secondary Motion Physics */
-@keyframes hairSecondaryMotion {
-  0%, 100% { transform: rotate(0deg) skewX(0deg); }
-  33% { transform: rotate(3.5deg) skewX(2deg); }
-  66% { transform: rotate(-2.5deg) skewX(-1.5deg); }
+.intensity-high .card-3d:hover {
+  transform: translateY(-6px) scale(1.015);
+}
+.intensity-high .btn-3d:hover {
+  transform: translateY(-3px) scale(1.025);
 }
 
-.warrior-hair-secondary {
-  transform-origin: 120px 50px;
-  animation: hairSecondaryMotion 2.4s ease-in-out infinite;
+/* 9. UI Depth Levels */
+.depth-none .card-3d,
+.depth-none .btn-3d,
+.depth-none .keycap-3d {
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-@keyframes bustSecondaryMotion {
-  0%, 100% { transform: translateY(0) scaleY(1); }
-  50% { transform: translateY(1.2px) scaleY(1.02); }
+.depth-subtle .card-3d {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
 }
 
-.warrior-bust-secondary {
-  transform-origin: 120px 130px;
-  animation: bustSecondaryMotion 1.8s ease-in-out infinite;
+.depth-deep .card-3d {
+  box-shadow: 0 28px 60px -10px rgba(0, 0, 0, 0.7), 0 0 40px var(--theme-glow) !important;
 }
-
-@keyframes capePhysics {
-  0%, 100% { transform: skewX(0deg) scaleX(1); }
-  40% { transform: skewX(4deg) scaleX(1.04); }
-  80% { transform: skewX(-2deg) scaleX(0.98); }
-}
-
-.warrior-cape-physics {
-  transform-origin: 100px 120px;
-  animation: capePhysics 2.8s ease-in-out infinite;
-}
-
-@keyframes sashSecondary {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(5deg); }
-}
-
-.warrior-sash-secondary {
-  transform-origin: 138px 165px;
-  animation: sashSecondary 2s ease-in-out infinite;
-}
-
-
-

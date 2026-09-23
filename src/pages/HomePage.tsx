@@ -163,8 +163,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
           onPracticeMistakes={handlePracticeMistakes}
         />
       ) : (
-        <div className="w-full max-w-5xl flex flex-col items-center gap-6">
-          {/* Top Test Configuration Controls (Hidden in Focus layout during typing) */}
+        <div className="w-full max-w-5xl flex flex-col items-center gap-6 animate-stagger-item">
+          {/* Top Test Configuration Controls */}
           <div
             className={`w-full transition-opacity duration-200 ${
               layout === 'focus' && engine.isActive ? 'opacity-0 pointer-events-none' : 'opacity-100'

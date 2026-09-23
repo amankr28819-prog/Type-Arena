@@ -237,7 +237,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
           </div>
 
           {/* Primary Action Card: Practice My Mistakes */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl relative overflow-hidden">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl relative overflow-hidden card-3d">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex flex-col gap-2 max-w-lg">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5">
@@ -272,7 +272,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
 
               <button
                 onClick={() => launchMistakesDrill(recentMistakeKeys, recentMistakeWords)}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[var(--color-primary)] text-[var(--bg-main)] font-extrabold text-sm shadow-xl shadow-[var(--color-primary)]/20 hover:opacity-90 transition-all shrink-0"
+                className="btn-3d btn-3d-primary flex items-center gap-2 px-6 py-3.5 rounded-2xl font-extrabold text-sm shadow-xl shrink-0 cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Start Mistake Drill</span>
@@ -296,7 +296,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
                     mistakeKeys: weakKeys.map((k) => k.key)
                   })
                 }
-                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group card-3d"
               >
                 <div>
                   <div className="p-2.5 w-fit rounded-xl bg-rose-500/15 text-rose-400 mb-3">

@@ -46,6 +46,13 @@ export const DEFAULT_SETTINGS: UserSettings = {
   language: 'english',
   punctuation: false,
   numbers: false,
+  animationIntensity: 'medium',
+  uiDepth: 'medium',
+  backgroundAtmosphere: 'dynamic',
+  glassmorphism: true,
+  cardTilt: true,
+  cursorGlow: true,
+  themePreset: 'balanced',
 };
 
 export const DEFAULT_PBS: PersonalBests = {

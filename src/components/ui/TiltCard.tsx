@@ -48,23 +48,23 @@ export const TiltCard: React.FC<TiltCardProps> = ({
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       style={{
-        transform: settings.reducedMotion
+        transform: settings.reducedMotion || settings.animationIntensity === 'off' || !settings.cardTilt
           ? 'none'
-          : `perspective(1000px) rotateX(${tilt.rotateX.toFixed(2)}deg) rotateY(${tilt.rotateY.toFixed(2)}deg)`,
+          : `perspective(1000px) rotateX(${tilt.rotateX.toFixed(2)}deg) rotateY(${tilt.rotateY.toFixed(2)}deg) translateY(-2px)`,
         transformStyle: 'preserve-3d',
         transition: 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease'
       }}
-      className={`relative rounded-3xl ${className}`}
+      className={`card-3d relative rounded-3xl ${className}`}
       {...props}
     >
       {children}
 
-      {/* Dynamic Specular Glare Reflection */}
-      {glare && !settings.reducedMotion && (
+      {/* Dynamic Specular Glare & Ambient Glow Reflection */}
+      {glare && !settings.reducedMotion && settings.animationIntensity !== 'off' && (
         <div
-          className="absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-300"
+          className="absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-300 z-0"
           style={{
-            background: `radial-gradient(circle 240px at ${glarePos.x}% ${glarePos.y}%, rgba(255,255,255,0.18), transparent 70%)`,
+            background: `radial-gradient(circle 280px at ${glarePos.x}% ${glarePos.y}%, var(--theme-glow, rgba(255,255,255,0.18)), transparent 70%)`,
             opacity: glarePos.opacity
           }}
         />

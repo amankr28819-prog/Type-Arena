@@ -26,12 +26,25 @@ export interface ThemeColors {
   keyActive: string;
 }
 
+export interface ThemeAtmosphere {
+  glow?: string;
+  ambientParticles?: 'stars' | 'bubbles' | 'matrix' | 'sparks' | 'sakura' | 'neon' | 'dust' | 'none';
+  gridPattern?: boolean;
+  glassOpacity?: number;
+}
+
 export interface ThemeConfig {
   id: string;
   name: string;
-  category: 'dark' | 'light' | 'retro' | 'colorful' | 'minimal';
+  category: 'dark' | 'light' | 'retro' | 'colorful' | 'minimal' | 'scifi' | 'nature';
   colors: ThemeColors;
+  atmosphere?: ThemeAtmosphere;
 }
+
+export type AnimationIntensity = 'off' | 'low' | 'medium' | 'high';
+export type UiDepth = 'none' | 'subtle' | 'medium' | 'deep';
+export type BackgroundAtmosphere = 'none' | 'subtle' | 'dynamic';
+export type ThemePreset = 'minimal' | 'balanced' | 'immersive' | 'futuristic';
 
 export interface UserSettings {
   themeId: string;
@@ -61,6 +74,13 @@ export interface UserSettings {
   language: LanguageOption;
   punctuation: boolean;
   numbers: boolean;
+  animationIntensity: AnimationIntensity;
+  uiDepth: UiDepth;
+  backgroundAtmosphere: BackgroundAtmosphere;
+  glassmorphism: boolean;
+  cardTilt: boolean;
+  cursorGlow: boolean;
+  themePreset: ThemePreset;
 }
 
 export interface KeystrokeEvent {

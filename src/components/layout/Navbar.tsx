@@ -51,31 +51,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="w-full border-b border-[var(--border-color)] bg-[var(--bg-surface)]/80 backdrop-blur-md sticky top-0 z-40">
+    <header className="w-full border-b border-[var(--border-color)] bg-[var(--bg-surface)]/85 backdrop-blur-xl sticky top-0 z-40 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div
           onClick={() => onTabChange('home')}
           className="flex items-center gap-3 cursor-pointer select-none group"
         >
-          <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-[var(--bg-main)] shadow-md shadow-[var(--color-primary)]/20 transition-transform group-hover:scale-105">
-            <Keyboard className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-2xl bg-[var(--color-primary)] flex items-center justify-center text-[var(--bg-main)] shadow-md shadow-[var(--color-primary)]/25 transition-transform group-hover:scale-105 group-active:scale-95">
+            <Keyboard className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-base tracking-tight text-[var(--text-main)] flex items-center gap-1.5 font-mono">
+            <span className="font-black text-base tracking-tight text-[var(--text-main)] flex items-center gap-1.5 font-mono">
               TYPEARENA
-              <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--color-primary)] border border-[var(--border-color)]">
-                v1.0
+              <span className="text-[10px] font-sans px-1.5 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--color-primary)] border border-[var(--border-color)] shadow-xs">
+                3D
               </span>
             </span>
             <span className="text-[10px] text-[var(--text-sub)] tracking-wider uppercase font-semibold">
-              Learn. Practice. Master.
+              Tactile Interactive Typing
             </span>
           </div>
         </div>
 
-        {/* Primary Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-[var(--bg-subtle)] p-1 rounded-2xl border border-[var(--border-color)]">
+        {/* Primary 3D Navigation Tabs */}
+        <nav className="hidden md:flex items-center gap-1 bg-[var(--bg-subtle)]/90 p-1.5 rounded-2xl border border-[var(--border-color)] shadow-inner">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -87,10 +87,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onTabChange(item.id as NavTab);
                 }}
                 className={`
-                  flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer
+                  flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none
                   ${
                     isActive
-                      ? 'bg-[var(--color-primary)] text-[var(--bg-main)] shadow-sm btn-3d'
+                      ? 'btn-3d btn-3d-primary font-bold shadow-md'
                       : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
                   }
                 `}
@@ -102,19 +102,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Action Controls: Theme Picker, Sound Mute, Privacy Pill */}
+        {/* Action Controls: Theme Studio, Sound Toggle, Local Privacy */}
         <div className="flex items-center gap-2">
-          {/* Theme Quick Switcher Button */}
+          {/* Theme Studio Button */}
           <button
             onClick={() => {
               soundEngine.playButtonClick();
               onOpenThemeModal();
             }}
-            className="btn-3d flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-main)] transition-all cursor-pointer"
-            title="Choose Theme or Build Custom Theme"
+            className="btn-3d flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-main)] transition-all cursor-pointer"
+            title="Open 3D Theme Studio"
           >
+            <span
+              className="w-3 h-3 rounded-full ring-2 ring-[var(--border-color)] shadow-xs"
+              style={{ backgroundColor: currentTheme.colors.colorPrimary }}
+            />
+            <span className="hidden sm:inline capitalize font-mono text-[11px]">{currentTheme.name}</span>
             <Palette className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-            <span className="hidden sm:inline capitalize">{currentTheme.name}</span>
           </button>
 
           {/* Sound Toggle */}
@@ -135,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Local Privacy Badge */}
           <div
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400 select-none shadow-xs"
             title="All your data is stored 100% locally on this device. No account or tracking required."
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -153,14 +157,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id as NavTab)}
-              className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ${
+              className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${
                 isActive
                   ? 'text-[var(--color-primary)] font-bold'
                   : 'text-[var(--text-sub)]'
               }`}
             >
               <Icon className="w-4 h-4" />
-              <span>{item.id === 'studio' ? 'Studio' : item.label}</span>
+              <span>{item.label}</span>
             </button>
           );
         })}
