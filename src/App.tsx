@@ -11,6 +11,7 @@ import { ExamPage } from './pages/ExamPage';
 import { GamesPage } from './pages/GamesPage';
 import { StatsPage } from './pages/StatsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { CharacterStudioPage } from './pages/CharacterStudioPage';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
@@ -55,6 +56,7 @@ function AppContent() {
         )}
         {activeTab === 'exam' && <ExamPage />}
         {activeTab === 'games' && <GamesPage />}
+        {activeTab === 'studio' && <CharacterStudioPage />}
         {activeTab === 'stats' && <StatsPage />}
         {activeTab === 'settings' && (
           <SettingsPage onOpenThemeModal={() => setIsThemeModalOpen(true)} />
