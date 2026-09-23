@@ -62,22 +62,22 @@ export class SecondaryDynamicsEngine {
   constructor(params: Partial<PhysicsParams> = {}) {
     this.params = { ...DEFAULT_PHYSICS_PARAMS, ...params };
 
-    // Initial soft body setup for upper body
+    // Initial soft body setup for upper body (natural human tissue response)
     this.leftBust = {
-      position: new THREE.Vector3(-0.09, 1.25, 0.16),
+      position: new THREE.Vector3(-0.092, 1.25, 0.17),
       velocity: new THREE.Vector3(0, 0, 0),
-      restPosition: new THREE.Vector3(-0.09, 1.25, 0.16),
-      stiffness: 140.0,
-      damping: 10.0,
+      restPosition: new THREE.Vector3(-0.092, 1.25, 0.17),
+      stiffness: 165.0,
+      damping: 14.5,
       mass: 1.0,
     };
 
     this.rightBust = {
-      position: new THREE.Vector3(0.09, 1.25, 0.16),
+      position: new THREE.Vector3(0.092, 1.25, 0.17),
       velocity: new THREE.Vector3(0, 0, 0),
-      restPosition: new THREE.Vector3(0.09, 1.25, 0.16),
-      stiffness: 140.0,
-      damping: 10.0,
+      restPosition: new THREE.Vector3(0.092, 1.25, 0.17),
+      stiffness: 165.0,
+      damping: 14.5,
       mass: 1.0,
     };
 
@@ -323,6 +323,25 @@ export class SecondaryDynamicsEngine {
 
   public getRightBustOffset(): THREE.Vector3 {
     return new THREE.Vector3().subVectors(this.rightBust.position, this.rightBust.restPosition);
+  }
+
+  // Realistic rotational tilt reacting to inertia and displacement
+  public getLeftBustRotation(): THREE.Euler {
+    const off = this.getLeftBustOffset();
+    return new THREE.Euler(
+      -off.y * 3.5 - off.z * 1.5,
+      off.x * 1.8,
+      -off.x * 2.2
+    );
+  }
+
+  public getRightBustRotation(): THREE.Euler {
+    const off = this.getRightBustOffset();
+    return new THREE.Euler(
+      -off.y * 3.5 - off.z * 1.5,
+      off.x * 1.8,
+      -off.x * 2.2
+    );
   }
 
   // Get dynamic angles for hair braids
