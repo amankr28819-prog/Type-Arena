@@ -7,7 +7,7 @@ import type {
 } from '../types';
 
 export function calculateWpm(correctChars: number, timeSeconds: number): number {
-  if (timeSeconds <= 0) return 0;
+  if (timeSeconds < 0.2) return 0;
   const minutes = timeSeconds / 60;
   // Standard metric: 5 characters = 1 word
   const wpm = (correctChars / 5) / minutes;
@@ -15,14 +15,14 @@ export function calculateWpm(correctChars: number, timeSeconds: number): number 
 }
 
 export function calculateRawWpm(totalKeystrokes: number, timeSeconds: number): number {
-  if (timeSeconds <= 0) return 0;
+  if (timeSeconds < 0.2) return 0;
   const minutes = timeSeconds / 60;
   const raw = (totalKeystrokes / 5) / minutes;
   return Math.max(0, Math.round(raw));
 }
 
 export function calculateNetWpm(rawWpm: number, uncorrectedErrors: number, timeSeconds: number): number {
-  if (timeSeconds <= 0) return 0;
+  if (timeSeconds < 0.2) return 0;
   const minutes = timeSeconds / 60;
   const errorPenalty = uncorrectedErrors / minutes;
   return Math.max(0, Math.round(rawWpm - errorPenalty));

@@ -5,12 +5,15 @@ import {
   Heart,
   Zap,
   Flame,
-  Flag
+  Flag,
+  Swords,
+  Sparkles
 } from 'lucide-react';
 import { ENGLISH_WORDS } from '../lib/wordlists';
 import { soundEngine } from '../lib/audio';
+import { TypeArenaBattle } from '../components/games/TypeArenaBattle';
 
-type GameType = 'menu' | 'race' | 'falling' | 'bubble' | 'speed';
+type GameType = 'menu' | 'battle' | 'race' | 'falling' | 'bubble' | 'speed';
 
 export const GamesPage: React.FC = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
@@ -30,6 +33,48 @@ export const GamesPage: React.FC = () => {
             <p className="text-sm text-[var(--text-sub)] max-w-2xl mt-1">
               Reinforce keyboard reflexes through gameplay. Fast-paced action tests your instant word recognition, finger independence, and composure under pressure.
             </p>
+          </div>
+
+          {/* FEATURED: TypeArena Battle Card */}
+          <div
+            onClick={() => setActiveGame('battle')}
+            className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[var(--bg-surface)] to-[var(--bg-subtle)] border-2 border-[var(--color-primary)]/50 hover:border-[var(--color-primary)] shadow-2xl transition-all cursor-pointer group flex flex-col md:flex-row items-start md:items-center justify-between gap-6 card-3d overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--color-primary)]/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col gap-3 max-w-2xl relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-bold text-[11px] uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Featured Combat Game
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-bold text-[11px]">
+                  3-Round Boss Battle
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-3">
+                <Swords className="w-7 h-7 text-[var(--color-primary)]" />
+                TypeArena Battle: Combat Typing
+              </h2>
+
+              <p className="text-xs sm:text-sm text-[var(--text-sub)] leading-relaxed">
+                Step inside the arena for a 3-round duel! 100 HP per combatant. Every accurately typed word launches a dynamic sword slash against the arena bot. Race against the charging bot attack timer to claim victory!
+              </p>
+
+              <div className="flex items-center gap-4 text-xs font-mono text-[var(--text-sub)] mt-1">
+                <span>⚔️ Sword Slashes</span>
+                <span>•</span>
+                <span>💥 Floating DMG & Crits</span>
+                <span>•</span>
+                <span>🏆 Grand Champion Trophy</span>
+              </div>
+            </div>
+
+            <button className="relative z-10 px-6 py-3 rounded-2xl bg-[var(--color-primary)] text-[var(--bg-main)] font-black text-xs uppercase tracking-wider group-hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-[var(--color-primary)]/25 shrink-0">
+              <Swords className="w-4 h-4" />
+              <span>Enter Arena Battle</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -121,6 +166,7 @@ export const GamesPage: React.FC = () => {
       )}
 
       {/* Render Active Game */}
+      {activeGame === 'battle' && <TypeArenaBattle onBack={() => setActiveGame('menu')} />}
       {activeGame === 'race' && <WordRaceGame onBack={() => setActiveGame('menu')} />}
       {activeGame === 'falling' && <FallingWordsGame onBack={() => setActiveGame('menu')} />}
       {activeGame === 'bubble' && <BubbleTypingGame onBack={() => setActiveGame('menu')} />}

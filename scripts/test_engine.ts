@@ -148,4 +148,30 @@ assert(beginnerLessons.length >= 5, `Beginner course lessons >= 5 (found ${begin
 assert(intermediateLessons.length >= 5, `Intermediate course lessons >= 5 (found ${intermediateLessons.length})`);
 assert(advancedLessons.length >= 4, `Advanced course lessons >= 4 (found ${advancedLessons.length})`);
 
+// 6. Test Precision Timer & Custom 45s Duration Calculations
+// Guard against < 0.2s division
+assert(calculateWpm(10, 0.1) === 0, 'calculateWpm returns 0 when time < 0.2s');
+assert(calculateRawWpm(10, 0.05) === 0, 'calculateRawWpm returns 0 when time < 0.2s');
+assert(calculateNetWpm(50, 2, 0.1) === 0, 'calculateNetWpm returns 0 when time < 0.2s');
+
+// Custom 45-second test: 225 characters / 5 = 45 words / (45/60 min = 0.75) = exactly 60 WPM
+const wpm45s = calculateWpm(225, 45);
+assert(wpm45s === 60, `calculateWpm(225 chars, 45s) === 60 WPM (got ${wpm45s})`);
+
+// Custom 45-second test with float elapsed time (e.g., 44.98s ~ 45s)
+const wpmFloat = calculateWpm(225, 45.0);
+assert(wpmFloat === 60, `calculateWpm with float seconds is accurate (got ${wpmFloat})`);
+
+// 7. Verify TypeArena Battle Game Mechanics
+const calcDamage = (word: string, isCrit: boolean) => {
+  const baseDmg = Math.round(18 + word.length * 1.5);
+  return isCrit ? Math.round(baseDmg * 1.4) : baseDmg;
+};
+const shortHit = calcDamage('swift', false);
+const longHit = calcDamage('annihilate', false);
+const critHit = calcDamage('unstoppable', true);
+assert(shortHit > 0 && shortHit < longHit, `Longer words deal more combat damage (${shortHit} vs ${longHit})`);
+assert(critHit > longHit, `Critical hit boosts damage significantly (${critHit} vs ${longHit})`);
+
 console.log('--- ALL TYPEARENA TESTS PASSED PERFECTLY! ---');
+

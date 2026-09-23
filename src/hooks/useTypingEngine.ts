@@ -141,14 +141,16 @@ export function useTypingEngine({
 
   const stats = getCharacterStats();
   const currentTotalTyped = stats.correct + stats.incorrect + stats.extra;
-  const currentDurationForWpm = Math.max(1, elapsedSeconds);
+  const currentDurationForWpm = startTimeRef.current
+    ? Math.max(0.5, (performance.now() - startTimeRef.current) / 1000)
+    : Math.max(1, elapsedSeconds);
   const currentWpm = calculateWpm(stats.correct, currentDurationForWpm);
   const currentRawWpm = calculateRawWpm(currentTotalTyped, currentDurationForWpm);
   const currentAccuracy = calculateAccuracy(stats);
   const currentErrors = stats.incorrect + stats.extra;
 
   // Finalize test and compute full result
-  const finishTest = useCallback(() => {
+  const finishTest = useCallback((finalDurationOverride?: number) => {
     if (resultSavedRef.current) return;
     resultSavedRef.current = true;
 
@@ -160,7 +162,25 @@ export function useTypingEngine({
     setIsActive(false);
     setIsFinished(true);
 
-    const actualDuration = Math.max(1, elapsedSeconds);
+    let actualDuration: number;
+    if (finalDurationOverride !== undefined) {
+      actualDuration = finalDurationOverride;
+    } else if (startTimeRef.current) {
+      const raw = (performance.now() - startTimeRef.current) / 1000;
+      if (mode === 'time' && targetDuration > 0) {
+        actualDuration = Math.min(targetDuration, Math.max(1, Math.round(raw)));
+      } else {
+        actualDuration = Math.max(1, Math.round(raw));
+      }
+    } else {
+      actualDuration = Math.max(1, elapsedSeconds);
+    }
+
+    setElapsedSeconds(actualDuration);
+    if (mode === 'time' && targetDuration > 0) {
+      setRemainingSeconds(0);
+    }
+
     const finalStats = getCharacterStats();
     const finalWpm = calculateWpm(finalStats.correct, actualDuration);
     const finalRaw = calculateRawWpm(
@@ -221,6 +241,7 @@ export function useTypingEngine({
     elapsedSeconds,
     getCharacterStats,
     mode,
+    targetDuration,
     currentWordIndex,
     currentInput,
     settings.difficulty,
@@ -229,44 +250,50 @@ export function useTypingEngine({
     onTestComplete
   ]);
 
-  // Interval timer for live updates
+  // Interval timer for live updates with timestamp drift compensation
   useEffect(() => {
     if (!isActive || isFinished) return;
 
-    timerIntervalRef.current = window.setInterval(() => {
-      setElapsedSeconds((prev) => {
-        const nextElapsed = prev + 1;
+    let lastRecordedSec = 0;
 
-        // Record live sample in timeline
+    timerIntervalRef.current = window.setInterval(() => {
+      if (!startTimeRef.current) return;
+      const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+      const wholeElapsed = Math.floor(exactElapsed);
+
+      setElapsedSeconds(wholeElapsed);
+
+      // Record live sample in timeline once per whole second
+      if (wholeElapsed > lastRecordedSec) {
+        lastRecordedSec = wholeElapsed;
         const currentStats = getCharacterStats();
-        const liveW = calculateWpm(currentStats.correct, Math.max(1, nextElapsed));
+        const liveW = calculateWpm(currentStats.correct, Math.max(1, wholeElapsed));
         const liveRaw = calculateRawWpm(
           currentStats.correct + currentStats.incorrect + currentStats.extra,
-          Math.max(1, nextElapsed)
+          Math.max(1, wholeElapsed)
         );
         timelineRef.current.push({
-          time: nextElapsed,
+          time: wholeElapsed,
           wpm: liveW,
           rawWpm: liveRaw,
           errors: currentStats.incorrect + currentStats.extra
         });
+      }
 
-        // Time Mode countdown rule: automatically ends at 0 seconds
-        if (mode === 'time' && targetDuration > 0) {
-          const rem = Math.max(0, targetDuration - nextElapsed);
-          setRemainingSeconds(rem);
-          if (rem <= 0) {
-            finishTest();
-          }
+      // Time Mode countdown rule: automatically ends at target duration
+      if (mode === 'time' && targetDuration > 0) {
+        const rem = Math.max(0, targetDuration - exactElapsed);
+        setRemainingSeconds(Math.ceil(rem));
+        if (exactElapsed >= targetDuration) {
+          finishTest(targetDuration);
         }
-
-        return nextElapsed;
-      });
-    }, 1000);
+      }
+    }, 50);
 
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
       }
     };
   }, [isActive, isFinished, mode, targetDuration, finishTest, getCharacterStats]);
@@ -296,10 +323,10 @@ export function useTypingEngine({
       const latency = lastKeyTimeRef.current ? Math.round(now - lastKeyTimeRef.current) : 0;
       lastKeyTimeRef.current = now;
 
-      // Start timer on first keystroke
+      // Start timer on first keystroke using performance.now()
       if (!isActive) {
         setIsActive(true);
-        startTimeRef.current = Date.now();
+        startTimeRef.current = performance.now();
       }
 
       const activeWord = words.current[currentWordIndex] || '';
