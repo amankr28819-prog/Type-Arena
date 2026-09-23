@@ -48,7 +48,7 @@ export const GamesPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-bold text-[11px] uppercase tracking-wider">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Featured 3D Combat Game
+                  Featured Arcade Game
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-bold text-[11px]">
                   3-Round Boss Battle
@@ -57,15 +57,15 @@ export const GamesPage: React.FC = () => {
 
               <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-3">
                 <Swords className="w-7 h-7 text-[var(--color-primary)]" />
-                TypeArena Battle: Cartoon Sword Fight
+                TypeArena Battle: Typing Duel
               </h2>
 
               <p className="text-xs sm:text-sm text-[var(--text-sub)] leading-relaxed">
-                Step inside the 3D stone arena for a cartoon sword duel! Full animated warrior rigs with sword swings, impact sparks, combo chains, and special attacks across 3 intense boss rounds.
+                Step inside the arena for a high-speed typing duel! Test your keyboard reflexes with lightning keystroke strikes, combos, parry blocks, and special attacks across 3 intense boss rounds.
               </p>
 
               <div className="flex items-center gap-4 text-xs font-mono text-[var(--text-sub)] mt-1">
-                <span>⚔️ Animated Swords</span>
+                <span>⚔️ Rapid Keystrokes</span>
                 <span>•</span>
                 <span>💥 Combos & Special Attacks</span>
                 <span>•</span>

@@ -10,14 +10,13 @@ import {
   Palette,
   Volume2,
   VolumeX,
-  ShieldCheck,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { soundEngine } from '../../lib/audio';
 
-export type NavTab = 'home' | 'learn' | 'practice' | 'exam' | 'games' | 'studio' | 'stats' | 'settings';
+export type NavTab = 'home' | 'learn' | 'practice' | 'exam' | 'games' | 'stats' | 'settings';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -47,7 +46,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'practice', label: 'Practice', icon: Target },
     { id: 'exam', label: 'Exam', icon: GraduationCap },
     { id: 'games', label: 'Games', icon: Gamepad2 },
-    { id: 'studio', label: 'Character Studio', icon: Sparkles, badge: '3D' },
     { id: 'stats', label: 'Stats', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -98,12 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 `}
               >
                 <Icon className="w-3.5 h-3.5" />
-                <span>{item.id === 'studio' ? 'Character Studio' : item.label}</span>
-                {'badge' in item && (
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-400 font-mono font-bold border border-rose-500/30">
-                    {item.badge}
-                  </span>
-                )}
+                <span>{item.label}</span>
               </button>
             );
           })}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { Navbar, type NavTab } from './components/layout/Navbar';
@@ -11,11 +11,16 @@ import { ExamPage } from './pages/ExamPage';
 import { GamesPage } from './pages/GamesPage';
 import { StatsPage } from './pages/StatsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { CharacterStudioPage } from './pages/CharacterStudioPage';
+import { cleanupCharacterStudioData } from './lib/storage';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+
+  // One-time cleanup of legacy character data
+  useEffect(() => {
+    cleanupCharacterStudioData();
+  }, []);
 
   // States to pass mistakes directly into practice drill
   const [mistakeKeys, setMistakeKeys] = useState<string[]>([]);
@@ -56,7 +61,6 @@ function AppContent() {
         )}
         {activeTab === 'exam' && <ExamPage />}
         {activeTab === 'games' && <GamesPage />}
-        {activeTab === 'studio' && <CharacterStudioPage />}
         {activeTab === 'stats' && <StatsPage />}
         {activeTab === 'settings' && (
           <SettingsPage onOpenThemeModal={() => setIsThemeModalOpen(true)} />

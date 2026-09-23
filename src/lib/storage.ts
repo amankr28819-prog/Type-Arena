@@ -558,4 +558,49 @@ class StorageManager {
   }
 }
 
+/**
+ * One-time idempotent cleanup to completely purge any legacy Character Studio
+ * data, state, or keys from browser storage while preserving all typing history,
+ * personal records, courses, themes, and settings.
+ */
+export function cleanupCharacterStudioData(): void {
+  try {
+    const legacyKeys = [
+      'typearena_studio_age_verified',
+      'typearena_studio_disclaimer_accepted',
+      'typearena_character_studio_state',
+      'characterStudioData',
+      'characterHistory',
+      'savedCharacters',
+      'selectedCharacter',
+      'characterCustomization',
+      'characterStudioSettings',
+      'typearena_studio_temp',
+    ];
+
+    legacyKeys.forEach((key) => {
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+      try {
+        sessionStorage.removeItem(key);
+      } catch {}
+    });
+
+    // Also scan localStorage for any keys starting with 'typearena_studio' or 'characterStudio'
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith('typearena_studio') ||
+          key.startsWith('characterStudio') ||
+          key.startsWith('savedCharacter'))
+      ) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {}
+}
+
 export const storage = new StorageManager();
+

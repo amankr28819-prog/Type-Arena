@@ -7,16 +7,10 @@ import {
   ArrowLeft,
   Volume2,
   VolumeX,
-  Play,
-  UserCheck,
-  MoveLeft,
-  MoveRight,
-  Repeat
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { soundEngine } from '../../lib/audio';
-import { CartoonWarrior, type WarriorAnimation, type FacingDirection } from './CartoonWarrior';
-import { WARRIOR_ROSTER, getRandomBotOpponent, type WarriorProfile } from '../../lib/warriors';
-import { TiltCard } from '../ui/TiltCard';
 
 type BattleDifficulty = 'easy' | 'normal' | 'hard' | 'master';
 
@@ -44,6 +38,27 @@ const ROUND_WORDS: Record<number, string[]> = {
     'destruction', 'juggernaut', 'invincible', 'devastating', 'overwhelming',
     'resurrection', 'masterpiece', 'executioner', 'infallible'
   ]
+};
+
+const BOT_ROUNDS: Record<number, { name: string; title: string; avatar: string; color: string }> = {
+  1: {
+    name: 'Iron Sentinel',
+    title: 'Automaton Vanguard',
+    avatar: '🤖',
+    color: 'from-blue-600 to-cyan-500'
+  },
+  2: {
+    name: 'Shadowblade',
+    title: 'Stealth Infiltrator',
+    avatar: '🥷',
+    color: 'from-purple-600 to-indigo-500'
+  },
+  3: {
+    name: 'Dragon Sovereign',
+    title: 'Arena Supreme Overlord',
+    avatar: '🐲',
+    color: 'from-rose-600 to-amber-500'
+  }
 };
 
 const DIFFICULTY_CONFIG: Record<
@@ -77,9 +92,6 @@ const DIFFICULTY_CONFIG: Record<
 };
 
 export const TypeArenaBattle: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  // Game Setup & Character Selection
-  const [selectedPlayer, setSelectedPlayer] = useState<WarriorProfile>(WARRIOR_ROSTER[0]);
-  const [currentBot, setCurrentBot] = useState<WarriorProfile>(WARRIOR_ROSTER[4]);
   const [difficulty, setDifficulty] = useState<BattleDifficulty>('normal');
   const [round, setRound] = useState<1 | 2 | 3>(1);
   const [roundScores, setRoundScores] = useState<{ player: number; bot: number }>({
@@ -87,21 +99,10 @@ export const TypeArenaBattle: React.FC<{ onBack: () => void }> = ({ onBack }) =>
     bot: 0
   });
 
-  // Arena Physics & Positioning (Movable Fighters)
-  const [playerX, setPlayerX] = useState<number>(20); // 20% from left
-  const [botX, setBotX] = useState<number>(75);       // 75% from left
-  const [playerFacing, setPlayerFacing] = useState<FacingDirection>('right');
-  const [botFacing, setBotFacing] = useState<FacingDirection>('left');
-
   // Combatant Health & Energy
   const [playerHp, setPlayerHp] = useState(100);
   const [botHp, setBotHp] = useState(100);
   const [specialEnergy, setSpecialEnergy] = useState(0); // 0 to 100%
-  const [botCharge, setBotCharge] = useState(0);         // 0 to 100%
-
-  // Character Animation States
-  const [playerAnim, setPlayerAnim] = useState<WarriorAnimation>('idle');
-  const [botAnim, setBotAnim] = useState<WarriorAnimation>('idle');
   const [screenShake, setScreenShake] = useState(false);
 
   // Typing & Target Word State
@@ -118,1036 +119,651 @@ export const TypeArenaBattle: React.FC<{ onBack: () => void }> = ({ onBack }) =>
   const [floatingDamage, setFloatingDamage] = useState<FloatingDamage[]>([]);
   const [isBotTelegraphing, setIsBotTelegraphing] = useState(false);
 
-  // Game Phase
-  const [gameState, setGameState] = useState<
-    'selecting' | 'countdown' | 'fighting' | 'roundOver' | 'matchOver'
-  >('selecting');
-  const [countdown, setCountdown] = useState(3);
+  // Match Outcome & Analytics
+  const [gameState, setGameState] = useState<'playing' | 'roundOver' | 'matchOver'>('playing');
   const [roundWinner, setRoundWinner] = useState<'player' | 'bot' | null>(null);
-  const [soundMuted, setSoundMuted] = useState(false);
-
-  // Combat Statistics
-  const [totalDamageDealt, setTotalDamageDealt] = useState(0);
-  const [totalDamageTaken, setTotalDamageTaken] = useState(0);
+  const [totalWordsTyped, setTotalWordsTyped] = useState(0);
   const [totalKeystrokes, setTotalKeystrokes] = useState(0);
   const [correctKeystrokes, setCorrectKeystrokes] = useState(0);
-  const [bestStrikeWpm, setBestStrikeWpm] = useState(0);
-  const startTimeRef = useRef<number | null>(null);
+  const [totalDamageDealt, setTotalDamageDealt] = useState(0);
+  const [totalDamageTaken, setTotalDamageTaken] = useState(0);
+  const [matchStartTime, setMatchStartTime] = useState<number>(performance.now());
+  const [isMuted, setIsMuted] = useState(false);
 
-  const currentConfig = DIFFICULTY_CONFIG[difficulty];
-  const targetWord = wordList[wordIndex % (wordList.length || 1)] || 'strike';
-
-  // Toggle audio
-  const toggleSound = () => {
-    const next = !soundMuted;
-    setSoundMuted(next);
-    soundEngine.setMuted(next);
+  // Audio helper
+  const playSfx = (type: 'slash' | 'hit' | 'special' | 'victory' | 'defeat' | 'click' | 'block') => {
+    if (isMuted) return;
+    try {
+      if (type === 'slash') soundEngine.playSwordSlash();
+      else if (type === 'hit') soundEngine.playSwordHit();
+      else if (type === 'special') soundEngine.playSpecialAttack();
+      else if (type === 'victory') soundEngine.playVictory();
+      else if (type === 'defeat') soundEngine.playDefeat();
+      else if (type === 'block') soundEngine.playSwordBlock();
+      else if (type === 'click') soundEngine.playKeystroke('clicky');
+    } catch {}
   };
 
-  // Trigger floating damage helper
-  const addFloatingDamage = useCallback(
-    (target: 'bot' | 'player', text: string, isCrit = false, isBlock = false) => {
-      const id = Date.now() + Math.random();
-      setFloatingDamage((prev) => [...prev, { id, target, text, isCrit, isBlock }]);
-      setTimeout(() => {
-        setFloatingDamage((prev) => prev.filter((item) => item.id !== id));
-      }, 950);
-    },
-    []
-  );
+  // Trigger floating damage number
+  const spawnFloatingDamage = (
+    target: 'bot' | 'player',
+    text: string,
+    isCrit: boolean = false,
+    isBlock: boolean = false
+  ) => {
+    const id = Date.now() + Math.random();
+    setFloatingDamage((prev) => [...prev, { id, target, text, isCrit, isBlock }]);
+    setTimeout(() => {
+      setFloatingDamage((prev) => prev.filter((d) => d.id !== id));
+    }, 900);
+  };
 
-  // Trigger camera screen shake
-  const triggerCameraShake = useCallback(() => {
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 380);
-  }, []);
-
-  // Shuffle and set round words
-  const initRoundWords = useCallback((rnd: 1 | 2 | 3) => {
-    const base = [...ROUND_WORDS[rnd]];
-    for (let i = base.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [base[i], base[j]] = [base[j], base[i]];
-    }
-    setWordList(base);
+  // Initialize round word sequence
+  const initRoundWords = useCallback((roundNum: 1 | 2 | 3) => {
+    const source = ROUND_WORDS[roundNum] || ROUND_WORDS[1];
+    const shuffled = [...source].sort(() => Math.random() - 0.5);
+    setWordList(shuffled);
     setWordIndex(0);
     setInput('');
-    setIsInputLocked(false);
     wordStartTimeRef.current = performance.now();
   }, []);
 
-  // Start round countdown
-  const startRoundCountdown = useCallback(
-    (rnd: 1 | 2 | 3) => {
-      setRound(rnd);
-      setPlayerHp(100);
-      setBotHp(100);
-      setBotCharge(0);
-      setSpecialEnergy(0);
-      setCombo(0);
-      setPlayerAnim('idle');
-      setBotAnim('idle');
-      setPlayerX(20);
-      setBotX(75);
-      setPlayerFacing('right');
-      setBotFacing('left');
-      setRoundWinner(null);
-      setGameState('countdown');
-      setCountdown(3);
-      initRoundWords(rnd);
-      soundEngine.playRoundStart();
-    },
-    [initRoundWords]
-  );
-
-  // Begin Match from Character Selection
-  const handleConfirmCharacter = () => {
-    // Randomly choose a different bot opponent
-    const bot = getRandomBotOpponent(selectedPlayer.id);
-    setCurrentBot(bot);
-    setRoundScores({ player: 0, bot: 0 });
-    setTotalDamageDealt(0);
-    setTotalDamageTaken(0);
-    setTotalKeystrokes(0);
-    setCorrectKeystrokes(0);
-    setBestStrikeWpm(0);
-    startTimeRef.current = performance.now();
-    startRoundCountdown(1);
-  };
-
-  // Turn around player
-  const handleToggleFacing = () => {
-    setPlayerFacing((prev) => {
-      if (prev === 'right') return 'left';
-      if (prev === 'left') return 'back';
-      return 'right';
-    });
-    setPlayerAnim('turn');
-    setTimeout(() => setPlayerAnim('idle'), 250);
-  };
-
-  // Keyboard Movement & Controls
-  const movePlayer = useCallback((delta: number) => {
-    setPlayerX((prev) => {
-      const next = Math.max(8, Math.min(74, prev + delta));
-      return next;
-    });
-    if (delta > 0) setPlayerFacing('right');
-    if (delta < 0) setPlayerFacing('left');
-    setPlayerAnim('walk');
-    setTimeout(() => {
-      setPlayerAnim((a) => (a === 'walk' ? 'idle' : a));
-    }, 300);
-  }, []);
-
-  // Click-to-move on Arena ground
-  const handleArenaClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (gameState !== 'fighting') return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = ((e.clientX - rect.left) / rect.width) * 100;
-    const clampedX = Math.max(8, Math.min(74, clickX));
-    const delta = clampedX - playerX;
-    if (Math.abs(delta) > 3) {
-      movePlayer(delta > 0 ? 8 : -8);
-    }
-  };
-
-  // Countdown timer logic
+  // Initialize match
   useEffect(() => {
-    if (gameState !== 'countdown') return;
+    initRoundWords(1);
+    setMatchStartTime(performance.now());
+  }, [initRoundWords]);
 
-    if (countdown > 1) {
-      const timer = setTimeout(() => {
-        setCountdown((c) => c - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setGameState('fighting');
-        inputRef.current?.focus();
-        wordStartTimeRef.current = performance.now();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [gameState, countdown]);
-
-  // Round Finish Handler
-  const handleRoundFinish = useCallback(
-    (winner: 'player' | 'bot') => {
-      setGameState('roundOver');
-      setRoundWinner(winner);
-
-      const nextScores = {
-        player: roundScores.player + (winner === 'player' ? 1 : 0),
-        bot: roundScores.bot + (winner === 'bot' ? 1 : 0)
-      };
-      setRoundScores(nextScores);
-
-      if (winner === 'player') {
-        setPlayerAnim('victory');
-        setBotAnim('defeat');
-        soundEngine.playVictory();
-      } else {
-        setBotAnim('victory');
-        setPlayerAnim('defeat');
-        soundEngine.playDefeat();
-      }
-
-      setTimeout(() => {
-        if (round >= 3 || nextScores.player >= 2 || nextScores.bot >= 2) {
-          setGameState('matchOver');
-        } else {
-          startRoundCountdown((round + 1) as 1 | 2 | 3);
-        }
-      }, 2400);
-    },
-    [round, roundScores, startRoundCountdown]
-  );
-
-  // Bot Attack AI Loop
+  // Keep focus on typing input during combat
   useEffect(() => {
-    if (gameState !== 'fighting') return;
+    if (gameState === 'playing' && !isInputLocked) {
+      inputRef.current?.focus();
+    }
+  }, [gameState, isInputLocked, wordIndex]);
 
-    const intervalMs = 100;
-    const step = 100 / ((currentConfig.botAttackIntervalSec * 1000) / intervalMs);
+  // Bot Auto-Attack Timer
+  useEffect(() => {
+    if (gameState !== 'playing' || isInputLocked) return;
 
-    const timer = setInterval(() => {
-      setBotCharge((charge) => {
-        const next = charge + step;
+    const intervalSec = DIFFICULTY_CONFIG[difficulty].botAttackIntervalSec;
+    const telegraphMs = 1200; // Warning telegraph before strike
 
-        if (next >= 75 && !isBotTelegraphing) {
-          setIsBotTelegraphing(true);
-        }
+    const telegraphTimer = setTimeout(() => {
+      setIsBotTelegraphing(true);
+    }, (intervalSec * 1000) - telegraphMs);
 
-        if (next >= 100) {
-          // Bot Unleashes Attack
-          setIsBotTelegraphing(false);
-          setBotFacing('left');
-          setBotAnim('attack');
-          soundEngine.playBotAttack();
+    const attackTimer = setTimeout(() => {
+      setIsBotTelegraphing(false);
 
-          setTimeout(() => {
-            // Player hit impact
-            setPlayerAnim('hit');
-            triggerCameraShake();
+      // Execute Bot Attack on Player
+      const baseDmg = DIFFICULTY_CONFIG[difficulty].botBaseDamage;
+      const isCrit = Math.random() < 0.25;
+      const incomingDmg = Math.round(baseDmg * (isCrit ? 1.5 : 1.0));
 
-            // Calculate damage with player defense stat
-            const baseDmg = currentConfig.botBaseDamage + Math.floor(Math.random() * 5);
-            const defFactor = Math.max(0.65, 1 - (selectedPlayer.stats.defense - 50) * 0.005);
-            const dmg = Math.round(baseDmg * defFactor);
-
-            addFloatingDamage('player', `-${dmg} HP`);
-            setTotalDamageTaken((t) => t + dmg);
-            setCombo(0);
-
-            setPlayerHp((hp) => {
-              const nextHp = hp - dmg;
-              if (nextHp <= 0) {
-                handleRoundFinish('bot');
-                return 0;
-              }
-              return nextHp;
-            });
-
-            setTimeout(() => {
-              setPlayerAnim('idle');
-              setBotAnim('idle');
-            }, 350);
-          }, 320);
-
-          return 0;
-        }
-
+      setPlayerHp((prev) => {
+        const next = Math.max(0, prev - incomingDmg);
+        if (next === 0) handleRoundDefeat();
         return next;
       });
-    }, intervalMs);
 
-    return () => clearInterval(timer);
-  }, [
-    gameState,
-    currentConfig,
-    isBotTelegraphing,
-    handleRoundFinish,
-    addFloatingDamage,
-    triggerCameraShake,
-    selectedPlayer.stats.defense
-  ]);
+      setTotalDamageTaken((prev) => prev + incomingDmg);
+      spawnFloatingDamage('player', `-${incomingDmg}`, isCrit);
+      playSfx('hit');
 
-  // Execute Player Attack on Word Complete
-  const executePlayerAttack = useCallback(
-    (isSpecial = false) => {
-      if (gameState !== 'fighting' || isInputLocked) return;
+      // Trigger screen shake
+      setScreenShake(true);
+      setTimeout(() => setScreenShake(false), 300);
 
-      setIsInputLocked(true);
-      setPlayerFacing('right');
+      // Bot attack interrupts player combo
+      setCombo(0);
+    }, intervalSec * 1000);
 
-      // Word strike duration & velocity
-      const elapsedMs = performance.now() - wordStartTimeRef.current;
-      const wordWpm = Math.round((targetWord.length / 5) / (Math.max(elapsedMs, 250) / 60000));
-      setBestStrikeWpm((b) => Math.max(b, wordWpm));
+    return () => {
+      clearTimeout(telegraphTimer);
+      clearTimeout(attackTimer);
+    };
+  }, [gameState, isInputLocked, difficulty, round, playerHp]);
 
-      // Critical strike evaluation (enhanced by Valeria passive)
-      const critThreshold = selectedPlayer.id === 'valeria' ? 65 : 72;
-      const isCrit = wordWpm >= critThreshold;
+  // Handle Round Victory
+  const handleRoundVictory = () => {
+    setIsInputLocked(true);
+    setRoundWinner('player');
+    playSfx('victory');
 
-      // Combo count
-      const nextCombo = combo + 1;
-      setCombo(nextCombo);
-      setBestCombo((b) => Math.max(b, nextCombo));
-
-      // Sound FX
-      if (isSpecial) {
-        soundEngine.playSpecialAttack();
+    setRoundScores((prev) => {
+      const nextScores = { ...prev, player: prev.player + 1 };
+      if (nextScores.player >= 2 || round === 3) {
+        setGameState('matchOver');
       } else {
-        soundEngine.playSwordSlash();
-        soundEngine.playComboChime(nextCombo);
+        setGameState('roundOver');
       }
-
-      // Step 1: Attack Anticipation
-      setPlayerAnim('attackAnticipation');
-
-      // Step 2: Sword Swing & Travel to Hit point
-      setTimeout(() => {
-        setPlayerAnim(isSpecial ? 'specialAttack' : 'attack');
-
-        // Check if Bot was charging and Parry / Block was performed
-        const wasParry = isBotTelegraphing;
-        if (wasParry) {
-          soundEngine.playSwordBlock();
-          setBotCharge((c) => Math.max(0, c - 45)); // Disrupt bot charge
-        }
-
-        // Step 3: Collision at Hit point
-        setTimeout(() => {
-          soundEngine.playSwordHit();
-          triggerCameraShake();
-          setBotAnim('stagger');
-
-          // Damage Calculation based on character stats, combo, and special
-          const statPowerMultiplier = selectedPlayer.stats.power / 80;
-          const baseDmg = (16 + targetWord.length * 1.6) * statPowerMultiplier;
-          const comboMult = Math.min(2.5, 1 + (nextCombo - 1) * 0.15);
-          const critMult = isCrit ? 1.45 : 1.0;
-          const specialMult = isSpecial ? 2.4 : 1.0;
-
-          const totalDmg = Math.round(baseDmg * comboMult * critMult * specialMult);
-          setTotalDamageDealt((d) => d + totalDmg);
-
-          const floatText = isSpecial
-            ? `SPECIAL! -${totalDmg} HP`
-            : isCrit
-            ? `CRIT! -${totalDmg} HP`
-            : `-${totalDmg} HP`;
-
-          addFloatingDamage('bot', floatText, isCrit || isSpecial, wasParry);
-
-          // Energy Charge (enhanced by Seraphina passive)
-          const energyGain = selectedPlayer.id === 'seraphina' ? 24 : 18;
-          setSpecialEnergy((e) => (isSpecial ? 0 : Math.min(100, e + energyGain)));
-
-          // Apply damage to bot HP
-          setBotHp((hp) => {
-            const nextHp = hp - totalDmg;
-            if (nextHp <= 0) {
-              handleRoundFinish('player');
-              return 0;
-            }
-            return nextHp;
-          });
-
-          // Step 4: Recovery to Idle
-          setTimeout(() => {
-            setPlayerAnim('attackRecovery');
-            setBotAnim('idle');
-
-            setTimeout(() => {
-              setPlayerAnim('idle');
-              setWordIndex((idx) => idx + 1);
-              setInput('');
-              setIsInputLocked(false);
-              wordStartTimeRef.current = performance.now();
-              inputRef.current?.focus();
-            }, 180);
-          }, 240);
-        }, 160);
-      }, 120);
-    },
-    [
-      gameState,
-      isInputLocked,
-      targetWord,
-      combo,
-      isBotTelegraphing,
-      selectedPlayer,
-      triggerCameraShake,
-      addFloatingDamage,
-      handleRoundFinish
-    ]
-  );
-
-  // Keyboard Typing & Control Handler
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (gameState !== 'fighting') return;
-
-    // Movement hotkeys: Left/Right Arrow or A/D when alt/ctrl held, or tab for special
-    if (e.key === 'Tab' && specialEnergy >= 100) {
-      e.preventDefault();
-      executePlayerAttack(true);
-      return;
-    }
-
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      movePlayer(-6);
-      return;
-    }
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      movePlayer(6);
-      return;
-    }
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      handleToggleFacing();
-      return;
-    }
-
-    if (isInputLocked) {
-      e.preventDefault();
-      return;
-    }
-
-    // Process typing keystrokes
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      setTotalKeystrokes((k) => k + 1);
-
-      const nextInput = input + e.key;
-      const expectedChar = targetWord[input.length];
-
-      if (e.key === expectedChar) {
-        setCorrectKeystrokes((k) => k + 1);
-        soundEngine.playKeypress(true);
-
-        if (nextInput === targetWord) {
-          e.preventDefault();
-          executePlayerAttack(false);
-          return;
-        }
-      } else {
-        soundEngine.playKeypress(false);
-        setCombo(0); // Reset combo on mistake
-      }
-    }
+      return nextScores;
+    });
   };
 
-  // Restart match handler
+  // Handle Round Defeat
+  const handleRoundDefeat = () => {
+    setIsInputLocked(true);
+    setRoundWinner('bot');
+    playSfx('defeat');
+
+    setRoundScores((prev) => {
+      const nextScores = { ...prev, bot: prev.bot + 1 };
+      if (nextScores.bot >= 2 || round === 3) {
+        setGameState('matchOver');
+      } else {
+        setGameState('roundOver');
+      }
+      return nextScores;
+    });
+  };
+
+  // Proceed to Next Round
+  const handleNextRound = () => {
+    const nextRound = (round + 1) as 1 | 2 | 3;
+    setRound(nextRound);
+    setPlayerHp(100);
+    setBotHp(100);
+    setSpecialEnergy(0);
+    setCombo(0);
+    setGameState('playing');
+    setIsInputLocked(false);
+    initRoundWords(nextRound);
+  };
+
+  // Restart Full Match
   const handleRestartMatch = () => {
+    setRound(1);
     setRoundScores({ player: 0, bot: 0 });
-    setTotalDamageDealt(0);
-    setTotalDamageTaken(0);
+    setPlayerHp(100);
+    setBotHp(100);
+    setSpecialEnergy(0);
+    setCombo(0);
+    setBestCombo(0);
+    setTotalWordsTyped(0);
     setTotalKeystrokes(0);
     setCorrectKeystrokes(0);
-    setBestStrikeWpm(0);
-    startTimeRef.current = performance.now();
-    startRoundCountdown(1);
+    setTotalDamageDealt(0);
+    setTotalDamageTaken(0);
+    setGameState('playing');
+    setIsInputLocked(false);
+    setMatchStartTime(performance.now());
+    initRoundWords(1);
   };
 
-  // Combat Stats Calculation
-  const elapsedMinutes = startTimeRef.current
-    ? Math.max((performance.now() - startTimeRef.current) / 60000, 0.05)
-    : 1;
-  const combatWpm = Math.round((correctKeystrokes / 5) / elapsedMinutes);
-  const combatAccuracy = totalKeystrokes > 0
-    ? Math.round((correctKeystrokes / totalKeystrokes) * 100)
-    : 100;
+  // Handle Typing Input
+  const targetWord = wordList[wordIndex] || '';
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (gameState !== 'playing' || isInputLocked) return;
+
+    const val = e.target.value;
+    setInput(val);
+    setTotalKeystrokes((prev) => prev + 1);
+
+    // Keystroke accuracy check
+    const isCharCorrect = targetWord.startsWith(val);
+    if (isCharCorrect) {
+      setCorrectKeystrokes((prev) => prev + 1);
+    }
+
+    // Word Completed Check
+    if (val === targetWord) {
+      const now = performance.now();
+      const wordTimeSec = Math.max(0.1, (now - wordStartTimeRef.current) / 1000);
+      const instantWpm = Math.round((val.length / 5) / (wordTimeSec / 60));
+
+      // Calculate Player Strike Damage
+      const baseDmg = Math.round(18 + targetWord.length * 1.5);
+      const isCrit = instantWpm > 75;
+      const comboMultiplier = Math.min(2.5, 1 + combo * 0.15);
+      const finalDmg = Math.round(baseDmg * comboMultiplier * (isCrit ? 1.4 : 1.0));
+
+      // Bot Parry Check if bot is telegraphing
+      if (isBotTelegraphing) {
+        // Counter-parry bot!
+        spawnFloatingDamage('player', 'PARRY BLOCK!', false, true);
+        setIsBotTelegraphing(false);
+      }
+
+      // Deal damage to bot
+      setBotHp((prev) => {
+        const next = Math.max(0, prev - finalDmg);
+        if (next === 0) handleRoundVictory();
+        return next;
+      });
+
+      setTotalDamageDealt((prev) => prev + finalDmg);
+      spawnFloatingDamage('bot', `-${finalDmg}`, isCrit);
+      playSfx('slash');
+
+      // Update Combos & Energy
+      const newCombo = combo + 1;
+      setCombo(newCombo);
+      setBestCombo((prev) => Math.max(prev, newCombo));
+      setSpecialEnergy((prev) => Math.min(100, prev + 18));
+      setTotalWordsTyped((prev) => prev + 1);
+
+      // Advance Word
+      setInput('');
+      setWordIndex((prev) => (prev + 1) % wordList.length);
+      wordStartTimeRef.current = performance.now();
+    }
+  };
+
+  // Special 100% Catastrophic Slash
+  const handleUnleashSpecial = () => {
+    if (specialEnergy < 100 || gameState !== 'playing' || isInputLocked) return;
+
+    const specialDamage = Math.round(48 + difficulty === 'easy' ? 20 : 15);
+    setSpecialEnergy(0);
+
+    setBotHp((prev) => {
+      const next = Math.max(0, prev - specialDamage);
+      if (next === 0) handleRoundVictory();
+      return next;
+    });
+
+    setTotalDamageDealt((prev) => prev + specialDamage);
+    spawnFloatingDamage('bot', `💥 CRITICAL ${specialDamage}!`, true);
+    playSfx('special');
+
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 450);
+  };
+
+  // Overall Match Stats
+  const elapsedMinutes = Math.max(0.1, (performance.now() - matchStartTime) / 60000);
+  const battleWpm = Math.round((totalWordsTyped) / elapsedMinutes);
+  const accuracy = totalKeystrokes > 0 ? Math.round((correctKeystrokes / totalKeystrokes) * 100) : 100;
+  const currentBotInfo = BOT_ROUNDS[round] || BOT_ROUNDS[1];
 
   return (
     <div
-      className={`w-full max-w-5xl mx-auto flex flex-col gap-6 select-none transition-transform duration-100 ${
-        screenShake ? 'scale-[1.015] translate-y-1' : ''
+      className={`w-full max-w-5xl mx-auto py-4 sm:py-6 px-4 transition-transform duration-75 ${
+        screenShake ? 'animate-shake' : ''
       }`}
     >
-      {/* 1. Header & Navigation Controls */}
-      <div className="flex items-center justify-between px-2">
+      {/* ARENA HEADER NAVIGATION */}
+      <div className="flex items-center justify-between gap-4 mb-4">
         <button
           onClick={onBack}
-          className="btn-3d flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-sub)] hover:text-[var(--text-main)] cursor-pointer"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] hover:border-[var(--color-primary)] text-xs font-bold transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Exit Arena</span>
         </button>
 
-        <div className="flex items-center gap-2">
-          {gameState !== 'selecting' && (
-            <button
-              onClick={() => setGameState('selecting')}
-              className="btn-3d flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold text-[var(--color-primary)] cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Change Fighter</span>
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 rounded-full bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/30 text-[var(--color-primary)] text-xs font-bold font-mono">
+            ROUND {round} / 3
+          </span>
 
-          {/* Difficulty selector */}
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as BattleDifficulty)}
-            disabled={gameState === 'fighting'}
-            className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-bold text-[var(--text-main)] cursor-pointer outline-none"
+          <span
+            className={`px-3 py-1 rounded-full border text-xs font-bold font-mono ${
+              DIFFICULTY_CONFIG[difficulty].badgeColor
+            }`}
           >
-            <option value="easy">Novice</option>
-            <option value="normal">Gladiator</option>
-            <option value="hard">Veteran</option>
-            <option value="master">Overlord</option>
-          </select>
+            {DIFFICULTY_CONFIG[difficulty].label}
+          </span>
 
-          {/* Sound Toggle */}
           <button
-            onClick={toggleSound}
-            className="btn-3d p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] cursor-pointer"
-            title={soundMuted ? 'Unmute' : 'Mute'}
+            onClick={() => setIsMuted(!isMuted)}
+            className="p-1.5 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] cursor-pointer"
+            title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
           >
-            {soundMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* PHASE A: CHARACTER SELECTION SCREEN */}
-      {gameState === 'selecting' && (
-        <div className="flex flex-col gap-6 p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-color)] pb-6">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--color-primary)] font-bold text-xs uppercase tracking-wider mb-1">
-                <Swords className="w-4 h-4" />
-                <span>Warrior Roster Selection</span>
+      {/* 2D ARCADE COMBAT ARENA */}
+      <div className="relative w-full rounded-3xl bg-gradient-to-b from-[var(--bg-surface)] to-[var(--bg-subtle)] border border-[var(--border-color)] p-4 sm:p-6 shadow-2xl overflow-hidden flex flex-col gap-6">
+        {/* Arena Background Decors */}
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-[var(--color-primary)]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* COMBATANT HUD & HEALTH BARS */}
+        <div className="grid grid-cols-2 gap-4 sm:gap-8 items-center relative z-10">
+          {/* Player Side */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚔️</span>
+                <div>
+                  <h3 className="text-sm font-black text-[var(--text-main)]">You (Challenger)</h3>
+                  <span className="text-[10px] text-[var(--color-primary)] font-bold uppercase font-mono">
+                    Combo: {combo}x
+                  </span>
+                </div>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-main)]">
-                Choose Your Arena Champion
-              </h1>
-              <p className="text-xs text-[var(--text-sub)] mt-1">
-                Select an adult action heroine or powerhouse gladiator. Each warrior features distinct weapons, stats, and combat silhouettes.
+              <span className="text-sm font-mono font-bold text-[var(--color-correct)]">
+                {playerHp} / 100 HP
+              </span>
+            </div>
+
+            {/* Player Health Bar */}
+            <div className="w-full h-3 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-color)] overflow-hidden p-0.5">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-[var(--color-correct)] transition-all duration-300 shadow-sm"
+                style={{ width: `${playerHp}%` }}
+              />
+            </div>
+
+            {/* Special Energy Meter */}
+            <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-sub)] mt-0.5">
+              <span>SPECIAL ENERGY</span>
+              <span className="text-amber-400 font-bold">{specialEnergy}%</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-[var(--bg-subtle)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-300"
+                style={{ width: `${specialEnergy}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Bot Opponent Side */}
+          <div className="flex flex-col gap-1.5 text-right">
+            <div className="flex items-center justify-between flex-row-reverse">
+              <div className="flex items-center gap-2 flex-row-reverse">
+                <span className="text-xl">{currentBotInfo.avatar}</span>
+                <div>
+                  <h3 className="text-sm font-black text-[var(--text-main)]">{currentBotInfo.name}</h3>
+                  <span className="text-[10px] text-[var(--text-sub)] font-bold uppercase font-mono">
+                    {currentBotInfo.title}
+                  </span>
+                </div>
+              </div>
+              <span className="text-sm font-mono font-bold text-rose-400">
+                {botHp} / 100 HP
+              </span>
+            </div>
+
+            {/* Bot Health Bar */}
+            <div className="w-full h-3 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-color)] overflow-hidden p-0.5">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-rose-500 to-orange-500 transition-all duration-300 shadow-sm ml-auto"
+                style={{ width: `${botHp}%` }}
+              />
+            </div>
+
+            {/* Bot Telegraph Indicator */}
+            <div className="h-4 flex items-center justify-end">
+              {isBotTelegraphing && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 animate-pulse font-mono">
+                  ⚠️ INCOMING ATTACK! TYPE TO PARRY!
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* COMBAT ARENA VISUAL DOCK */}
+        <div className="relative w-full h-44 sm:h-56 rounded-2xl bg-[var(--bg-subtle)]/70 border border-[var(--border-color)] overflow-hidden flex items-end justify-between px-8 sm:px-16 pb-4">
+          {/* Ground Flagstone line */}
+          <div className="absolute bottom-0 left-0 right-0 h-4 bg-[var(--border-color)]" />
+
+          {/* Player Sprite Avatar */}
+          <div className="relative flex flex-col items-center z-10">
+            {/* Floating Damage above Player */}
+            <div className="absolute -top-12 flex flex-col items-center pointer-events-none">
+              {floatingDamage
+                .filter((d) => d.target === 'player')
+                .map((d) => (
+                  <span
+                    key={d.id}
+                    className={`font-black text-sm sm:text-base animate-bounce ${
+                      d.isBlock ? 'text-cyan-400' : 'text-rose-400'
+                    }`}
+                  >
+                    {d.text}
+                  </span>
+                ))}
+            </div>
+
+            <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-2xl bg-gradient-to-t from-emerald-600/30 to-emerald-400/10 border-2 border-emerald-400/40 flex flex-col items-center justify-center p-2 shadow-lg backdrop-blur-sm">
+              <span className="text-4xl sm:text-5xl">🤺</span>
+              <span className="text-[10px] font-bold text-emerald-400 font-mono mt-2">PLAYER</span>
+            </div>
+          </div>
+
+          {/* Arena Center Clash Area */}
+          <div className="flex flex-col items-center justify-center gap-1 self-center z-10">
+            <Swords className="w-8 h-8 text-[var(--color-primary)] animate-pulse" />
+            <span className="text-[11px] font-black tracking-widest text-[var(--text-sub)] uppercase">
+              ROUND {roundScores.player} - {roundScores.bot}
+            </span>
+          </div>
+
+          {/* Bot Sprite Avatar */}
+          <div className="relative flex flex-col items-center z-10">
+            {/* Floating Damage above Bot */}
+            <div className="absolute -top-12 flex flex-col items-center pointer-events-none">
+              {floatingDamage
+                .filter((d) => d.target === 'bot')
+                .map((d) => (
+                  <span
+                    key={d.id}
+                    className={`font-black text-sm sm:text-base animate-bounce ${
+                      d.isCrit ? 'text-amber-400 scale-125' : 'text-emerald-400'
+                    }`}
+                  >
+                    {d.text}
+                  </span>
+                ))}
+            </div>
+
+            <div
+              className={`w-20 h-28 sm:w-24 sm:h-32 rounded-2xl bg-gradient-to-t from-rose-600/30 to-rose-400/10 border-2 border-rose-400/40 flex flex-col items-center justify-center p-2 shadow-lg backdrop-blur-sm ${
+                isBotTelegraphing ? 'ring-4 ring-rose-500/50' : ''
+              }`}
+            >
+              <span className="text-4xl sm:text-5xl">{currentBotInfo.avatar}</span>
+              <span className="text-[10px] font-bold text-rose-400 font-mono mt-2">
+                {currentBotInfo.name.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ACTIVE TYPING COMBAT DOCK */}
+        {gameState === 'playing' && (
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            {/* Target Word Display with Keystroke Character Highlighting */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-[var(--text-sub)] font-mono uppercase tracking-wider">
+                Type Target Word to Strike:
+              </span>
+              <div className="text-2xl sm:text-3xl font-mono font-black tracking-wider px-6 py-2.5 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] shadow-inner flex items-center justify-center gap-0.5">
+                {targetWord.split('').map((char, idx) => {
+                  const typedChar = input[idx];
+                  let colorClass = 'text-[var(--text-sub)]';
+                  if (typedChar !== undefined) {
+                    colorClass =
+                      typedChar === char
+                        ? 'text-[var(--color-correct)]'
+                        : 'text-[var(--color-error)] bg-rose-500/20 rounded px-0.5';
+                  }
+                  return (
+                    <span key={idx} className={`${colorClass} transition-colors duration-75`}>
+                      {char}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Input Element */}
+            <div className="w-full max-w-md flex items-center gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Type word to strike..."
+                autoFocus
+                className="w-full px-5 py-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] text-center text-xl font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)] shadow-md"
+              />
+
+              {/* Special Attack Button */}
+              {specialEnergy >= 100 && (
+                <button
+                  onClick={handleUnleashSpecial}
+                  className="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-black text-xs uppercase tracking-wider animate-bounce shadow-lg shadow-amber-500/30 flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>SPECIAL!</span>
+                </button>
+              )}
+            </div>
+
+            {/* Real-time battle feedback */}
+            <div className="flex items-center gap-6 text-xs font-mono text-[var(--text-sub)]">
+              <span className="flex items-center gap-1.5 text-[var(--color-primary)] font-bold">
+                <Zap className="w-3.5 h-3.5" />
+                {battleWpm} WPM
+              </span>
+              <span>•</span>
+              <span className="font-bold text-[var(--text-main)]">{accuracy}% Accuracy</span>
+              <span>•</span>
+              <span className="text-emerald-400 font-bold">{totalDamageDealt} Dmg Dealt</span>
+            </div>
+          </div>
+        )}
+
+        {/* ROUND OVER BANNER */}
+        {gameState === 'roundOver' && (
+          <div className="flex flex-col items-center justify-center py-8 gap-4 text-center z-10">
+            <h3
+              className={`text-3xl font-black ${
+                roundWinner === 'player' ? 'text-emerald-400' : 'text-rose-400'
+              }`}
+            >
+              {roundWinner === 'player'
+                ? `⚔️ ROUND ${round} VICTORY!`
+                : `💀 ROUND ${round} DEFEAT!`}
+            </h3>
+            <p className="text-xs text-[var(--text-sub)] max-w-sm">
+              {roundWinner === 'player'
+                ? `You overpowered ${currentBotInfo.name} with lightning keyboard strikes!`
+                : `${currentBotInfo.name} broke through your defenses this round.`}
+            </p>
+
+            {round < 3 && roundScores.player < 2 && roundScores.bot < 2 && (
+              <button
+                onClick={handleNextRound}
+                className="mt-2 px-6 py-2.5 rounded-xl bg-[var(--color-primary)] text-[var(--bg-main)] font-bold text-xs hover:opacity-90 shadow-lg cursor-pointer"
+              >
+                Proceed to Round {round + 1} →
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* MATCH OVER FINAL SCORECARD */}
+        {gameState === 'matchOver' && (
+          <div className="flex flex-col items-center py-6 gap-6 text-center z-10">
+            <div className="p-4 rounded-3xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center gap-2">
+              <div className="p-3 rounded-2xl bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
+                {roundScores.player > roundScores.bot ? (
+                  <Trophy className="w-8 h-8 text-amber-400" />
+                ) : (
+                  <Skull className="w-8 h-8 text-rose-400" />
+                )}
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)]">
+                {roundScores.player > roundScores.bot
+                  ? '🏆 ARENA GRAND CHAMPION!'
+                  : '💀 FALLEN IN THE ARENA'}
+              </h2>
+              <p className="text-xs text-[var(--text-sub)] max-w-md">
+                {roundScores.player > roundScores.bot
+                  ? `Spectacular typing combat! You conquered the arena overlords with rapid keystrokes.`
+                  : `The bots proved formidable today. Sharpen your keyboard reflexes and fight again!`}
               </p>
             </div>
 
-            <button
-              onClick={handleConfirmCharacter}
-              className="btn-3d flex items-center justify-center gap-2 px-8 py-3 rounded-2xl bg-[var(--color-primary)] text-[var(--bg-main)] font-black text-sm shadow-xl shadow-[var(--color-primary)]/25 cursor-pointer hover:opacity-90"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Enter Arena with {selectedPlayer.name}</span>
-            </button>
+            {/* Scorecard Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full max-w-xl">
+              <div className="p-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center">
+                <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Rounds</span>
+                <span className="text-xl font-black font-mono text-[var(--color-primary)]">
+                  {roundScores.player} - {roundScores.bot}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center">
+                <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Battle WPM</span>
+                <span className="text-xl font-black font-mono text-[var(--color-correct)]">
+                  {battleWpm}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center">
+                <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Accuracy</span>
+                <span className="text-xl font-black font-mono text-[var(--text-main)]">
+                  {accuracy}%
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center">
+                <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Max Streak</span>
+                <span className="text-xl font-black font-mono text-amber-400">
+                  {bestCombo}x
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] flex flex-col items-center">
+                <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Combat DMG</span>
+                <span className="text-xl font-black font-mono text-emerald-400">
+                  {totalDamageDealt}
+                </span>
+                <span className="text-[10px] text-rose-400 font-mono">
+                  -{totalDamageTaken} taken
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={handleRestartMatch}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--color-primary)] text-[var(--bg-main)] font-bold text-xs hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Fight Again
+              </button>
+
+              <button
+                onClick={onBack}
+                className="px-6 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-main)] font-bold text-xs hover:border-[var(--color-primary)] transition-colors cursor-pointer"
+              >
+                Return to Arcade
+              </button>
+            </div>
           </div>
+        )}
 
-          {/* 8-Warrior Selection Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {WARRIOR_ROSTER.map((warrior) => {
-              const isSelected = selectedPlayer.id === warrior.id;
-              return (
-                <TiltCard
-                  key={warrior.id}
-                  onClick={() => setSelectedPlayer(warrior)}
-                  maxTilt={10}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-[var(--bg-subtle)] border-[var(--color-primary)] shadow-lg shadow-[var(--color-primary)]/20 ring-2 ring-[var(--color-primary)]/30'
-                      : 'bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--color-primary)]/50'
-                  }`}
-                >
-                  <div className="flex flex-col items-center">
-                    {/* Header Badges */}
-                    <div className="flex items-center justify-between w-full text-[10px] font-bold uppercase mb-2">
-                      <span className="text-[var(--text-sub)]">{warrior.archetype}</span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded ${
-                          warrior.gender === 'female'
-                            ? 'bg-rose-500/15 text-rose-400'
-                            : 'bg-indigo-500/15 text-indigo-400'
-                        }`}
-                      >
-                        {warrior.gender}
-                      </span>
-                    </div>
-
-                    {/* Animated Character Full-Body Preview */}
-                    <div className="h-44 w-full flex items-center justify-center overflow-hidden my-1">
-                      <CartoonWarrior
-                        warrior={warrior}
-                        animation={isSelected ? 'idle' : 'idle'}
-                        scale={0.88}
-                      />
-                    </div>
-
-                    {/* Name & Title */}
-                    <h3 className="text-base font-extrabold text-[var(--text-main)] text-center">
-                      {warrior.name}
-                    </h3>
-                    <span className="text-[11px] text-[var(--color-primary)] font-semibold text-center mb-2">
-                      {warrior.title}
-                    </span>
-
-                    {/* Weapon Info */}
-                    <div className="w-full text-center px-2 py-1 rounded-lg bg-[var(--bg-main)] text-[10px] text-[var(--text-sub)] font-mono mb-3">
-                      🗡️ {warrior.weaponName}
-                    </div>
-
-                    {/* Combat Stat Bars */}
-                    <div className="flex flex-col gap-1.5 w-full text-[10px] font-mono">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-sub)]">Speed</span>
-                        <span className="font-bold text-[var(--text-main)]">{warrior.stats.speed}</span>
-                      </div>
-                      <div className="w-full h-1 rounded-full bg-[var(--border-color)] overflow-hidden">
-                        <div
-                          className="h-full bg-cyan-400 rounded-full"
-                          style={{ width: `${warrior.stats.speed}%` }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-sub)]">Power</span>
-                        <span className="font-bold text-[var(--text-main)]">{warrior.stats.power}</span>
-                      </div>
-                      <div className="w-full h-1 rounded-full bg-[var(--border-color)] overflow-hidden">
-                        <div
-                          className="h-full bg-rose-400 rounded-full"
-                          style={{ width: `${warrior.stats.power}%` }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-sub)]">Defense</span>
-                        <span className="font-bold text-[var(--text-main)]">{warrior.stats.defense}</span>
-                      </div>
-                      <div className="w-full h-1 rounded-full bg-[var(--border-color)] overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full"
-                          style={{ width: `${warrior.stats.defense}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Passive Description */}
-                  <div className="mt-3 pt-2 border-t border-[var(--border-color)] text-[10px] text-[var(--text-sub)] italic text-center">
-                    {warrior.passiveDescription}
-                  </div>
-                </TiltCard>
-              );
-            })}
+        {/* DIFFICULTY SELECTOR FOOTER */}
+        <div className="flex flex-wrap items-center justify-between pt-4 border-t border-[var(--border-color)] text-xs text-[var(--text-sub)] relative z-10">
+          <span className="font-semibold">Battle Difficulty:</span>
+          <div className="flex items-center gap-2">
+            {(['easy', 'normal', 'hard', 'master'] as BattleDifficulty[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => {
+                  setDifficulty(d);
+                  handleRestartMatch();
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+                  difficulty === d
+                    ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-bold shadow-sm'
+                    : 'bg-[var(--bg-subtle)] text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
           </div>
         </div>
-      )}
-
-      {/* PHASE B: BATTLE ARENA */}
-      {gameState !== 'selecting' && (
-        <div className="flex flex-col gap-4">
-          {/* Top Status & Health Bars */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              {/* Player Fighter Info */}
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/30 flex items-center justify-center font-bold text-xs text-[var(--color-primary)]">
-                  {selectedPlayer.name[0]}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black text-[var(--text-main)]">
-                      {selectedPlayer.name}
-                    </span>
-                    <span className="text-[10px] text-[var(--color-primary)]">
-                      (P1: {roundScores.player})
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-[var(--text-sub)] font-mono">
-                    {selectedPlayer.weaponName}
-                  </span>
-                </div>
-              </div>
-
-              {/* Round Indicator */}
-              <div className="flex flex-col items-center">
-                <div className="px-3 py-1 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-color)] font-mono text-[11px] font-bold text-[var(--text-main)]">
-                  ROUND {round} OF 3
-                </div>
-                {combo > 1 && (
-                  <span className="text-xs font-black text-amber-400 animate-pulse mt-0.5">
-                    🔥 COMBO x{combo}!
-                  </span>
-                )}
-              </div>
-
-              {/* Bot Opponent Info */}
-              <div className="flex items-center gap-2 text-right">
-                <div>
-                  <div className="flex items-center justify-end gap-1.5">
-                    <span className="text-[10px] text-rose-400">(BOT: {roundScores.bot})</span>
-                    <span className="text-xs font-black text-[var(--text-main)]">
-                      {currentBot.name}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-[var(--text-sub)] font-mono">
-                    {currentBot.title}
-                  </span>
-                </div>
-                <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center font-bold text-xs text-rose-400">
-                  {currentBot.name[0]}
-                </div>
-              </div>
-            </div>
-
-            {/* Health Bars Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Player Health Bar */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between text-[11px] font-mono font-bold">
-                  <span className="text-[var(--text-sub)]">HP: {playerHp}/100</span>
-                  {specialEnergy >= 100 && (
-                    <span className="text-amber-400 font-extrabold animate-bounce">
-                      SPECIAL READY [TAB]
-                    </span>
-                  )}
-                </div>
-                <div className="w-full h-3 rounded-full bg-[var(--bg-main)] p-0.5 border border-[var(--border-color)] overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      playerHp > 50
-                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                        : playerHp > 25
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-400'
-                        : 'bg-gradient-to-r from-rose-500 to-rose-400'
-                    }`}
-                    style={{ width: `${Math.max(0, playerHp)}%` }}
-                  />
-                </div>
-                {/* Special Energy Meter */}
-                <div className="w-full h-1.5 rounded-full bg-[var(--bg-main)] overflow-hidden mt-0.5">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-400 to-amber-400 transition-all duration-200"
-                    style={{ width: `${specialEnergy}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Bot Health Bar */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between text-[11px] font-mono font-bold">
-                  {isBotTelegraphing ? (
-                    <span className="text-rose-400 animate-pulse font-extrabold">
-                      ⚠️ CHARGING STRIKE!
-                    </span>
-                  ) : (
-                    <span className="text-[var(--text-sub)]">ATTACK CHARGE</span>
-                  )}
-                  <span className="text-[var(--text-sub)]">HP: {botHp}/100</span>
-                </div>
-                <div className="w-full h-3 rounded-full bg-[var(--bg-main)] p-0.5 border border-[var(--border-color)] overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      botHp > 50
-                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                        : botHp > 25
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-400'
-                        : 'bg-gradient-to-r from-rose-500 to-rose-400'
-                    }`}
-                    style={{ width: `${Math.max(0, botHp)}%` }}
-                  />
-                </div>
-                {/* Bot Attack Meter */}
-                <div className="w-full h-1.5 rounded-full bg-[var(--bg-main)] overflow-hidden mt-0.5">
-                  <div
-                    className={`h-full transition-all duration-100 ${
-                      isBotTelegraphing ? 'bg-rose-500 animate-pulse' : 'bg-rose-400/80'
-                    }`}
-                    style={{ width: `${botCharge}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3D ARENA BATTLEFIELD (Movable Fighters + Click-To-Move Floor) */}
-          <div
-            onClick={handleArenaClick}
-            className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-[#090d16] via-[#121929] to-[#0a0f1d] border border-[var(--border-color)] shadow-2xl flex flex-col justify-end cursor-crosshair"
-          >
-            {/* Ambient Torchlight & Floating Ember Particles */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-8 left-12 w-28 h-28 rounded-full bg-cyan-500/10 blur-2xl" />
-              <div className="absolute top-8 right-12 w-28 h-28 rounded-full bg-rose-500/10 blur-2xl" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 bg-amber-500/5 blur-3xl" />
-            </div>
-
-            {/* 3D Perspective Ground Plane */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 arena-ground-3d bg-gradient-to-t from-slate-900 via-stone-900 to-transparent border-t border-slate-700/30">
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:18px_18px]" />
-            </div>
-
-            {/* Floating Damage Numbers */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
-              {floatingDamage.map((dmg) => (
-                <div
-                  key={dmg.id}
-                  className={`absolute font-mono font-black text-sm sm:text-base animate-in fade-in zoom-in-110 duration-200 ${
-                    dmg.isCrit
-                      ? 'text-amber-300 drop-shadow-[0_0_8px_#f59e0b]'
-                      : dmg.isBlock
-                      ? 'text-cyan-300 drop-shadow-[0_0_8px_#38bdf8]'
-                      : 'text-rose-400 drop-shadow-[0_0_6px_#ef4444]'
-                  }`}
-                  style={{
-                    left: dmg.target === 'bot' ? `${botX + 8}%` : `${playerX + 5}%`,
-                    top: '40%'
-                  }}
-                >
-                  {dmg.text}
-                </div>
-              ))}
-            </div>
-
-            {/* Countdown Overlay */}
-            {gameState === 'countdown' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-xs z-30 pointer-events-none">
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[var(--color-primary)] mb-2">
-                  ROUND {round} STARTING
-                </span>
-                <span className="text-7xl sm:text-8xl font-black font-mono text-[var(--text-main)] animate-bounce">
-                  {countdown}
-                </span>
-              </div>
-            )}
-
-            {/* Round Result Banner Overlay */}
-            {gameState === 'roundOver' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs z-30 pointer-events-none animate-in fade-in">
-                <span className="text-3xl sm:text-4xl font-black text-[var(--text-main)]">
-                  {roundWinner === 'player' ? '🏆 ROUND WON!' : '💀 ROUND LOST!'}
-                </span>
-                <span className="text-xs text-[var(--text-sub)] mt-1 font-mono">
-                  {roundWinner === 'player'
-                    ? `${selectedPlayer.name} dealt the decisive blow.`
-                    : `${currentBot.name} overwhelmed your defenses.`}
-                </span>
-              </div>
-            )}
-
-            {/* Fighters Staged Inside Battlefield */}
-            <div className="relative w-full h-64 sm:h-72 z-10">
-              {/* Player Fighter (Movable X position & Dynamic Facing) */}
-              <div
-                className="absolute bottom-6 transition-all duration-150 ease-out"
-                style={{
-                  left: `${playerX}%`,
-                  transform: 'translateX(-50%)'
-                }}
-              >
-                <CartoonWarrior
-                  warrior={selectedPlayer}
-                  animation={playerAnim}
-                  facing={playerFacing}
-                  scale={1.05}
-                />
-              </div>
-
-              {/* Bot Fighter (Positioned across stage) */}
-              <div
-                className="absolute bottom-6 transition-all duration-200 ease-out"
-                style={{
-                  left: `${botX}%`,
-                  transform: 'translateX(-50%)'
-                }}
-              >
-                <CartoonWarrior
-                  warrior={currentBot}
-                  animation={botAnim}
-                  facing={botFacing}
-                  scale={1.05}
-                  isBot={true}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Movement & Facing Controls Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl text-xs">
-            <div className="flex items-center gap-1.5 text-[var(--text-sub)]">
-              <span>Arena Controls:</span>
-              <button
-                onClick={() => movePlayer(-6)}
-                className="btn-3d flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-main)] font-mono cursor-pointer"
-                title="Step Left"
-              >
-                <MoveLeft className="w-3.5 h-3.5" />
-                <span>[← / A]</span>
-              </button>
-              <button
-                onClick={() => movePlayer(6)}
-                className="btn-3d flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-main)] font-mono cursor-pointer"
-                title="Step Right"
-              >
-                <MoveRight className="w-3.5 h-3.5" />
-                <span>[→ / D]</span>
-              </button>
-              <button
-                onClick={handleToggleFacing}
-                className="btn-3d flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--color-primary)] font-mono cursor-pointer"
-                title="Turn Around"
-              >
-                <Repeat className="w-3.5 h-3.5" />
-                <span>Turn [W / S]</span>
-              </button>
-            </div>
-
-            <div className="text-[11px] text-[var(--text-sub)] font-mono">
-              Click battlefield floor to walk • Type words to strike
-            </div>
-          </div>
-
-          {/* TYPING INPUT & COMBAT COMMAND PANEL */}
-          <div className="p-6 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl flex flex-col items-center gap-4">
-            {gameState === 'fighting' && (
-              <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-                {/* Target Word Display with Keystroke Character Highlighting */}
-                <div className="flex items-center justify-center gap-1 text-3xl sm:text-4xl font-mono font-black tracking-wider py-2">
-                  {targetWord.split('').map((char, index) => {
-                    const typedChar = input[index];
-                    const isMatched = typedChar === char;
-                    const isCurrent = index === input.length;
-
-                    return (
-                      <span
-                        key={index}
-                        className={`transition-all ${
-                          isMatched
-                            ? 'text-[var(--color-correct)] drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]'
-                            : typedChar
-                            ? 'text-[var(--color-error)] underline'
-                            : isCurrent
-                            ? 'text-[var(--color-primary)] animate-pulse'
-                            : 'text-[var(--text-sub)] opacity-50'
-                        }`}
-                      >
-                        {char}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                {/* Hidden / Transparent Keystroke Receiver Input */}
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={() => {}}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  disabled={isInputLocked}
-                  className="w-full text-center px-4 py-3 rounded-2xl bg-[var(--bg-subtle)] border-2 border-[var(--color-primary)] text-xl font-mono font-bold text-[var(--text-main)] outline-none shadow-inner"
-                  placeholder="Type the word above to strike..."
-                />
-
-                {/* Special Attack Trigger Button */}
-                {specialEnergy >= 100 && (
-                  <button
-                    onClick={() => executePlayerAttack(true)}
-                    className="btn-3d w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/25 cursor-pointer animate-pulse"
-                  >
-                    ⚡ UNLEASH 100% SPECIAL ATTACK CLEAVE [TAB] ⚡
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* MATCH OVER SCORECARD & CERTIFICATE RESULT */}
-            {gameState === 'matchOver' && (
-              <div className="flex flex-col items-center py-6 gap-6 text-center w-full max-w-xl">
-                <div className="p-4 rounded-3xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center gap-2 w-full">
-                  <div className="p-3 rounded-2xl bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-                    {roundScores.player > roundScores.bot ? (
-                      <Trophy className="w-8 h-8 text-amber-400" />
-                    ) : (
-                      <Skull className="w-8 h-8 text-rose-400" />
-                    )}
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)]">
-                    {roundScores.player > roundScores.bot
-                      ? '🏆 ARENA GRAND CHAMPION!'
-                      : '💀 DEFEATED IN THE ARENA'}
-                  </h2>
-                  <p className="text-xs text-[var(--text-sub)] max-w-md">
-                    {roundScores.player > roundScores.bot
-                      ? `Flawless swordsmanship! ${selectedPlayer.name} claimed victory across the tournament.`
-                      : `${currentBot.name} outmatched you in the final round. Re-sharpen your keyboard instincts!`}
-                  </p>
-                </div>
-
-                {/* Scorecard Stats Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full">
-                  <div className="p-3 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center">
-                    <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Rounds</span>
-                    <span className="text-xl font-black font-mono text-[var(--color-primary)]">
-                      {roundScores.player} - {roundScores.bot}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center">
-                    <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Combat WPM</span>
-                    <span className="text-xl font-black font-mono text-[var(--color-correct)]">
-                      {combatWpm}
-                    </span>
-                    <span className="text-[9px] text-[var(--text-sub)] font-mono">Peak: {bestStrikeWpm} WPM</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center">
-                    <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Accuracy</span>
-                    <span className="text-xl font-black font-mono text-[var(--text-main)]">
-                      {combatAccuracy}%
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center">
-                    <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Best Combo</span>
-                    <span className="text-xl font-black font-mono text-amber-400">
-                      x{bestCombo}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] flex flex-col items-center">
-                    <span className="text-[10px] text-[var(--text-sub)] font-semibold uppercase">Damage</span>
-                    <span className="text-base font-black font-mono text-cyan-400">
-                      +{totalDamageDealt} HP
-                    </span>
-                    <span className="text-[10px] font-mono text-rose-400">
-                      -{totalDamageTaken} HP
-                    </span>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={handleRestartMatch}
-                    className="btn-3d flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--color-primary)] text-[var(--bg-main)] font-bold text-xs cursor-pointer shadow-md"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Fight Again</span>
-                  </button>
-
-                  <button
-                    onClick={() => setGameState('selecting')}
-                    className="btn-3d flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-main)] font-bold text-xs hover:border-[var(--color-primary)] transition-colors cursor-pointer"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>Change Fighter</span>
-                  </button>
-
-                  <button
-                    onClick={onBack}
-                    className="btn-3d px-6 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--text-sub)] font-bold text-xs hover:text-[var(--text-main)] transition-colors cursor-pointer"
-                  >
-                    Return to Arcade
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
