@@ -37,27 +37,27 @@ export class StudioCameraController {
 
     switch (mode) {
       case 'full':
-        this.targetLookAt.set(0, 1.05, 0);
+        this.targetLookAt.set(0, 0.98, 0);
         this.targetDistance = 3.6;
-        this.targetPhi = Math.PI / 2 - 0.12;
+        this.targetPhi = Math.PI / 2 - 0.10;
         break;
 
       case 'upper':
-        this.targetLookAt.set(0, 1.35, 0);
-        this.targetDistance = 1.65;
-        this.targetPhi = Math.PI / 2 - 0.08;
+        this.targetLookAt.set(0, 1.45, 0);
+        this.targetDistance = 1.60;
+        this.targetPhi = Math.PI / 2 - 0.05;
         break;
 
       case 'mid':
-        this.targetLookAt.set(0, 0.95, 0);
-        this.targetDistance = 1.7;
+        this.targetLookAt.set(0, 1.05, 0);
+        this.targetDistance = 1.70;
         this.targetPhi = Math.PI / 2 - 0.05;
         break;
 
       case 'lower':
-        this.targetLookAt.set(0, 0.45, 0);
-        this.targetDistance = 2.1;
-        this.targetPhi = Math.PI / 2 - 0.18;
+        this.targetLookAt.set(0, 0.50, 0);
+        this.targetDistance = 2.05;
+        this.targetPhi = Math.PI / 2 - 0.15;
         break;
     }
   }

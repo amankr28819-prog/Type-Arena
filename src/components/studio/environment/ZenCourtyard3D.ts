@@ -10,6 +10,7 @@ export class ZenCourtyard3D {
   // Lights
   public dirLight: THREE.DirectionalLight;
   public ambientLight: THREE.AmbientLight;
+  public fillLight: THREE.DirectionalLight;
   public rimLight: THREE.DirectionalLight;
   public lanternLights: THREE.PointLight[] = [];
 
@@ -185,6 +186,11 @@ export class ZenCourtyard3D {
     this.dirLight.shadow.bias = -0.001;
     this.root.add(this.dirLight);
 
+    // Frontal Fill Light (Prevents black silhouettes when turned away from key light)
+    this.fillLight = new THREE.DirectionalLight(0xdbeafe, 0.65);
+    this.fillLight.position.set(-3.5, 4.0, 4.5);
+    this.root.add(this.fillLight);
+
     // Rim light (highlights curves and silhouette from behind)
     this.rimLight = new THREE.DirectionalLight(0xf43f5e, 1.1);
     this.rimLight.position.set(-4, 5, -5);
@@ -235,6 +241,8 @@ export class ZenCourtyard3D {
         this.ambientLight.intensity = 0.65;
         this.dirLight.color.setHex(0xffdfd0);
         this.dirLight.intensity = 1.35;
+        this.fillLight.color.setHex(0xdbeafe);
+        this.fillLight.intensity = 0.65;
         this.rimLight.color.setHex(0xf43f5e); // Sakura pink rim glow
         this.rimLight.intensity = 1.1;
         this.lanternLights.forEach((l) => (l.intensity = 1.3));
@@ -245,6 +253,8 @@ export class ZenCourtyard3D {
         this.ambientLight.intensity = 0.55;
         this.dirLight.color.setHex(0xffaa55); // Rich golden hour
         this.dirLight.intensity = 1.6;
+        this.fillLight.color.setHex(0xffd5b3);
+        this.fillLight.intensity = 0.70;
         this.rimLight.color.setHex(0xff5533);
         this.rimLight.intensity = 1.3;
         this.lanternLights.forEach((l) => (l.intensity = 1.5));
@@ -255,6 +265,8 @@ export class ZenCourtyard3D {
         this.ambientLight.intensity = 0.45;
         this.dirLight.color.setHex(0x9bd8ff); // Cool cyan moonbeam
         this.dirLight.intensity = 1.1;
+        this.fillLight.color.setHex(0x38bdf8);
+        this.fillLight.intensity = 0.50;
         this.rimLight.color.setHex(0x38bdf8);
         this.rimLight.intensity = 1.4;
         this.lanternLights.forEach((l) => (l.intensity = 1.8));
@@ -265,6 +277,8 @@ export class ZenCourtyard3D {
         this.ambientLight.intensity = 0.85;
         this.dirLight.color.setHex(0xffffff);
         this.dirLight.intensity = 1.5;
+        this.fillLight.color.setHex(0xf0f9ff);
+        this.fillLight.intensity = 0.80;
         this.rimLight.color.setHex(0xe0f2fe);
         this.rimLight.intensity = 0.6;
         this.lanternLights.forEach((l) => (l.intensity = 0.4));

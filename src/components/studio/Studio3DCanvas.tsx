@@ -366,7 +366,9 @@ export const Studio3DCanvas = React.forwardRef<StudioCanvasHandles, StudioCanvas
         );
 
         // Apply physics to character meshes
-        character.updatePhysics(dt);
+        if (typeof character.updatePhysics === 'function') {
+          character.updatePhysics(dt);
+        }
 
         // Update Environment (sakura petals & lanterns)
         courtyard.update(dt, dynamics.currentWindVector);

@@ -22,6 +22,10 @@ export class CharacterAnimator {
   public attackTime: number = 0;
   public attackDuration: number = 0.72;
 
+  // Eye Blinking Animation
+  private blinkTimer: number = 0;
+  private blinkInterval: number = 3.5;
+
   // Movement speed tracking
   public speed: number = 0;
 
@@ -61,6 +65,20 @@ export class CharacterAnimator {
     this.animTime += dt;
     let footstepImpulse = 0;
     let jumpVerticalVel = 0;
+
+    // Procedural Eye Blinking Cycle (Every 3-5 seconds, smooth 0.16s blink)
+    this.blinkTimer += dt;
+    if (this.blinkTimer >= this.blinkInterval) {
+      const blinkProgress = (this.blinkTimer - this.blinkInterval) / 0.16;
+      if (blinkProgress <= 1.0) {
+        const blinkFactor = Math.sin(blinkProgress * Math.PI);
+        this.character.setBlink(blinkFactor);
+      } else {
+        this.character.setBlink(0);
+        this.blinkTimer = 0;
+        this.blinkInterval = 2.8 + Math.random() * 2.4;
+      }
+    }
 
     // 1. ATTACK OVERRIDE
     if (this.isAttacking) {
