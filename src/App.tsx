@@ -95,7 +95,7 @@ function AppContent() {
       />
 
       {/* Main View Area with Smooth 3D Section Transitions */}
-      <main className="flex-1 flex flex-col justify-start relative z-10">
+      <main className="flex-1 flex flex-col justify-start relative z-10 pb-20 md:pb-0">
         <PageTransition activeKey={activeTab}>
           {activeTab === 'home' && (
             <HomePage onNavigateToPractice={handleNavigateToPractice} />

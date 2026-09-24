@@ -122,18 +122,6 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 select-none" onClick={handleContainerClick}>
-      {/* Hidden real input listener */}
-      <input
-        ref={inputRef}
-        type="text"
-        data-typing-input="true"
-        className="opacity-0 absolute -z-50 pointer-events-none"
-        onKeyDown={engine.handleKeyDown}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        autoFocus
-      />
-
       {/* Top Header Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
         <button
@@ -327,15 +315,46 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
       {/* Dedicated Typing Area */}
       {engine.status !== 'finished' && engine.status !== 'countdown' && (
         <div
-          className={`typing-deck-3d p-6 sm:p-8 rounded-3xl transition-all relative overflow-hidden ${
+          className={`typing-deck-3d p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl transition-all relative overflow-hidden ${
             !isFocused ? 'ring-1 ring-amber-500/30' : ''
           }`}
         >
+          {/* Real input listener */}
+          <input
+            ref={inputRef}
+            type="text"
+            data-typing-input="true"
+            className="absolute inset-0 opacity-0 cursor-text w-full h-full z-10"
+            style={{ fontSize: '16px' }}
+            inputMode="text"
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+            onKeyDown={engine.handleKeyDown}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val) {
+                for (const char of val) {
+                  engine.handleKeyDown({
+                    key: char,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                  } as unknown as React.KeyboardEvent);
+                }
+                e.target.value = '';
+              }
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            autoFocus
+          />
+
           {/* Unfocused overlay prompt */}
           {!isFocused && (
             <div className="absolute inset-0 z-30 bg-[var(--bg-main)]/60 backdrop-blur-xs flex items-center justify-center">
               <span className="text-xs sm:text-sm font-semibold text-[var(--color-primary)] bg-[var(--bg-surface)] px-4 py-2 rounded-xl border border-[var(--border-color)] shadow-lg">
-                Click anywhere to focus and type
+                Tap anywhere to focus and type
               </span>
             </div>
           )}
@@ -343,7 +362,7 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
           {/* Text stream */}
           <div
             className="flex flex-wrap items-center gap-x-2.5 gap-y-3 font-mono leading-relaxed"
-            style={{ fontSize: `${settings.fontSize || 24}px` }}
+            style={{ fontSize: `clamp(17px, 4.5vw, ${settings.fontSize || 24}px)` }}
           >
             {engine.words.map((word, wIdx) => {
               const isPast = wIdx < engine.currentWordIndex;
@@ -426,6 +445,13 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
           nextKey={engine.nextChar}
           isError={engine.liveErrors > 0}
           showFingerGuides={true}
+          onKeyPress={(key) => {
+            engine.handleKeyDown({
+              key,
+              preventDefault: () => {},
+              stopPropagation: () => {}
+            } as unknown as React.KeyboardEvent);
+          }}
         />
       )}
 

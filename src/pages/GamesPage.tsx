@@ -328,6 +328,12 @@ const WordRaceGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               onKeyDown={handleKeyDown}
               placeholder="Type word + Space..."
               autoFocus
+              inputMode="text"
+              autoCapitalize="none"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              style={{ fontSize: '16px' }}
               className="w-full max-w-sm px-4 py-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-center text-lg font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)]"
             />
           </div>
@@ -483,6 +489,12 @@ const FallingWordsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               onKeyDown={handleKeyDown}
               placeholder="Type word + Space to destroy..."
               autoFocus
+              inputMode="text"
+              autoCapitalize="none"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              style={{ fontSize: '16px' }}
               className="w-full max-w-md px-4 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-center font-mono text-base text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)]"
             />
           </div>
@@ -558,6 +570,12 @@ const BubbleTypingGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handlePopBubbleById = (id: number) => {
+    soundEngine.playKeystroke('clicky');
+    setScore((s) => s + 5);
+    setBubbles((prev) => prev.filter((b) => b.id !== id));
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
@@ -571,14 +589,15 @@ const BubbleTypingGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         {bubbles.map((b) => (
           <div
             key={b.id}
+            onClick={() => handlePopBubbleById(b.id)}
             style={{ left: `${b.x}%`, top: `${b.y}%` }}
-            className="absolute -translate-x-1/2 w-12 h-12 rounded-full bg-[var(--color-primary)]/20 border-2 border-[var(--color-primary)] flex items-center justify-center font-mono font-black text-lg text-[var(--color-primary)] shadow-lg shadow-[var(--color-primary)]/20 animate-pulse select-none transition-all duration-75"
+            className="absolute -translate-x-1/2 w-12 h-12 rounded-full bg-[var(--color-primary)]/20 border-2 border-[var(--color-primary)] flex items-center justify-center font-mono font-black text-lg text-[var(--color-primary)] shadow-lg shadow-[var(--color-primary)]/20 animate-pulse select-none transition-all duration-75 cursor-pointer active:scale-90"
           >
             {b.letter.toUpperCase()}
           </div>
         ))}
         <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-[var(--text-sub)]">
-          Press matching key on your keyboard to pop bubbles!
+          Press matching key on your keyboard or tap bubble to pop!
         </div>
       </div>
     </div>
@@ -684,6 +703,12 @@ const SpeedSprintGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               onKeyDown={handleKeyDown}
               placeholder="Type word + Space to start..."
               autoFocus
+              inputMode="text"
+              autoCapitalize="none"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              style={{ fontSize: '16px' }}
               className="w-full px-4 py-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-color)] text-center text-lg font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)]"
             />
             <span className="text-xs text-[var(--text-sub)]">Words Completed: {wordsDone}</span>

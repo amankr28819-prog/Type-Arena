@@ -110,8 +110,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               soundEngine.playButtonClick();
               onOpenThemeModal();
             }}
-            className="btn-3d flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-main)] transition-all cursor-pointer"
+            className="btn-3d flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-main)] transition-all cursor-pointer min-h-[40px]"
             title="Open 3D Theme Studio"
+            aria-label="Open Theme Studio"
           >
             <span
               className="w-3 h-3 rounded-full ring-2 ring-[var(--border-color)] shadow-xs"
@@ -127,8 +128,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               soundEngine.playButtonClick();
               toggleMute();
             }}
-            className="btn-3d p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] transition-all cursor-pointer"
+            className="btn-3d p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-sub)] hover:text-[var(--text-main)] transition-all cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center"
             title={settings.soundProfile === 'off' ? 'Sound: Muted (Click to enable)' : `Sound: ${settings.soundProfile}`}
+            aria-label="Toggle Sound"
           >
             {settings.soundProfile === 'off' ? (
               <VolumeX className="w-4 h-4 text-rose-400" />
@@ -148,27 +150,35 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Sub-Navigation Bar */}
-      <div className="md:hidden flex items-center justify-around border-t border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1.5 overflow-x-auto">
+      {/* Mobile Fixed Bottom Navigation Bar (Touch-optimized 44px+ targets & Safe Area support) */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-t border-[var(--border-color)] px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-2xl"
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id as NavTab)}
-              className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${
+              onClick={() => {
+                soundEngine.playButtonClick();
+                onTabChange(item.id as NavTab);
+              }}
+              className={`flex-1 min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
                 isActive
-                  ? 'text-[var(--color-primary)] font-bold'
-                  : 'text-[var(--text-sub)]'
+                  ? 'text-[var(--color-primary)] font-bold bg-[var(--bg-subtle)]/70'
+                  : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
               }`}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className="w-4 h-4" />
-              <span>{item.label}</span>
+              <Icon className={`w-4 h-4 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+              <span className="text-[10px] tracking-tight">{item.label}</span>
             </button>
           );
         })}
-      </div>
+      </nav>
     </header>
   );
 };

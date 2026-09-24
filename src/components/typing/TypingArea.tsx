@@ -96,7 +96,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         if (hiddenInputRef.current) hiddenInputRef.current.focus();
       }}
       className={`
-        relative w-full max-w-4xl mx-auto rounded-3xl p-6 sm:p-8
+        relative w-full max-w-4xl mx-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8
         typing-deck-3d cursor-text select-none
         ${isFocused ? 'ring-2 ring-[var(--color-primary)]/40 border-[var(--color-primary)]' : 'border-[var(--border-color)] opacity-95'}
       `}
@@ -106,35 +106,50 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         ref={hiddenInputRef}
         type="text"
         data-typing-input="true"
-        className="absolute opacity-0 pointer-events-none w-0 h-0"
-        autoCapitalize="off"
+        className="absolute inset-0 opacity-0 cursor-text w-full h-full z-10"
+        style={{ fontSize: '16px' }}
+        inputMode="text"
+        autoCapitalize="none"
         autoComplete="off"
         autoCorrect="off"
         spellCheck="false"
         onKeyDown={onKeyDown}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val) {
+            for (const char of val) {
+              onKeyDown({
+                key: char,
+                preventDefault: () => {},
+                stopPropagation: () => {},
+              } as unknown as React.KeyboardEvent);
+            }
+            e.target.value = '';
+          }
+        }}
         onBlur={onFocus}
       />
 
       {/* Focus indicator overlay if unfocused */}
       {!isFocused && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-3xl cursor-pointer">
-          <span className="px-4 py-2 rounded-xl bg-[var(--bg-subtle)] text-[var(--color-primary)] font-bold text-sm border border-[var(--border-color)] shadow-lg animate-pulse">
-            Click or press any key to focus
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-2xl sm:rounded-3xl cursor-pointer">
+          <span className="px-4 py-2 rounded-xl bg-[var(--bg-subtle)] text-[var(--color-primary)] font-bold text-xs sm:text-sm border border-[var(--border-color)] shadow-lg animate-pulse">
+            Tap or press any key to type
           </span>
         </div>
       )}
 
-      {/* Word stream display */}
+      {/* Word stream display with responsive mobile font scaling */}
       <div
         ref={containerRef}
         style={{
           fontFamily,
-          fontSize: `${fontSize}px`,
+          fontSize: `clamp(17px, 4.5vw, ${fontSize}px)`,
           lineHeight: '1.8',
           maxHeight: '180px'
         }}
         className={`
-          flex flex-wrap items-baseline gap-x-3 gap-y-1 overflow-hidden transition-all
+          flex flex-wrap items-baseline gap-x-2 sm:gap-x-3 gap-y-1 overflow-hidden transition-all
           ${blindMode ? 'blind-mode' : ''}
         `}
       >

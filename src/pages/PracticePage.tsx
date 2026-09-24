@@ -231,6 +231,13 @@ export const PracticePage: React.FC<PracticePageProps> = ({
             nextKey={nextKey}
             isError={isKeyError}
             showFingerGuides={true}
+            onKeyPress={(key) => {
+              engine.handleKeyDown({
+                key,
+                preventDefault: () => {},
+                stopPropagation: () => {}
+              } as unknown as React.KeyboardEvent);
+            }}
           />
         </div>
       ) : (

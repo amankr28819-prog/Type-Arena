@@ -500,7 +500,7 @@ export const TypeArenaBattle: React.FC<{ onBack: () => void }> = ({ onBack }) =>
         </div>
 
         {/* COMBAT ARENA VISUAL DOCK */}
-        <div className="relative w-full h-44 sm:h-56 rounded-2xl bg-[var(--bg-subtle)]/70 border border-[var(--border-color)] overflow-hidden flex items-end justify-between px-8 sm:px-16 pb-4">
+        <div className="relative w-full h-44 sm:h-56 rounded-2xl bg-[var(--bg-subtle)]/70 border border-[var(--border-color)] overflow-hidden flex items-end justify-between px-3 sm:px-8 md:px-16 pb-4">
           {/* Ground Flagstone line */}
           <div className="absolute bottom-0 left-0 right-0 h-4 bg-[var(--border-color)]" />
 
@@ -603,7 +603,13 @@ export const TypeArenaBattle: React.FC<{ onBack: () => void }> = ({ onBack }) =>
                 onChange={handleInputChange}
                 placeholder="Type word to strike..."
                 autoFocus
-                className="w-full px-5 py-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] text-center text-xl font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)] shadow-md"
+                inputMode="text"
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+                style={{ fontSize: '16px' }}
+                className="w-full px-4 sm:px-5 py-3 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-color)] text-center text-lg sm:text-xl font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-primary)] shadow-md"
               />
 
               {/* Special Attack Button */}

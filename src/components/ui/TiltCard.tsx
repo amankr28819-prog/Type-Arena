@@ -22,7 +22,8 @@ export const TiltCard: React.FC<TiltCardProps> = ({
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (settings.reducedMotion || !cardRef.current) return;
+      // Touch gestures are for scrolling - avoid tilt jitter on mobile
+      if (e.pointerType === 'touch' || settings.reducedMotion || !cardRef.current) return;
 
       const rect = cardRef.current.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width; // 0 to 1

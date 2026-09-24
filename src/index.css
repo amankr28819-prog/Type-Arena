@@ -20,12 +20,24 @@
     --font-typing: 'JetBrains Mono', monospace;
     --font-size-typing: 24px;
     --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 
   /* Universal font smoothing & prevent text blur on transformed hardware-accelerated nodes */
   *, *::before, *::after {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -33,10 +45,14 @@
     color: var(--text-main);
     font-family: var(--font-ui);
     min-height: 100vh;
+    min-height: 100dvh;
     transition: background-color 0.25s ease, color 0.25s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    padding-top: var(--safe-top);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
   }
 
   button, input, select, textarea {

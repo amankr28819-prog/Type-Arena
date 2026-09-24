@@ -10,6 +10,7 @@ interface VirtualKeyboardProps {
   showFingerGuides?: boolean;
   showHeatmap?: boolean;
   keyStats?: Record<string, KeyAnalytics>;
+  onKeyPress?: (key: string) => void;
 }
 
 interface KeyDef {
@@ -102,8 +103,10 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   isError = false,
   showFingerGuides = true,
   showHeatmap = false,
-  keyStats = {}
+  keyStats = {},
+  onKeyPress
 }) => {
+  const [virtualShift, setVirtualShift] = React.useState(false);
   const normCurrent = currentKey.toLowerCase();
   const normNext = nextKey.toLowerCase();
   const normWrong = wrongKey.toLowerCase();
@@ -119,8 +122,26 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
     return `rgba(239, 68, 68, ${0.15 + ratio * 0.7})`;
   };
 
+  const handlePointerDownKey = (e: React.PointerEvent, item: KeyDef) => {
+    e.preventDefault();
+    if (!onKeyPress) return;
+
+    if (item.key === 'ShiftLeft' || item.key === 'ShiftRight' || item.key === 'CapsLock') {
+      setVirtualShift((prev) => !prev);
+      return;
+    }
+
+    let charToSend = item.key;
+    if (virtualShift && charToSend.length === 1) {
+      charToSend = charToSend.toUpperCase();
+      setVirtualShift(false);
+    }
+
+    onKeyPress(charToSend);
+  };
+
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-5 rounded-3xl card-3d border border-[var(--border-color)] shadow-2xl transition-all">
+    <div className="w-full max-w-4xl mx-auto p-3 sm:p-5 rounded-2xl sm:rounded-3xl card-3d border border-[var(--border-color)] shadow-2xl transition-all">
       {/* Keyboard Header / Finger Indicators */}
       {showFingerGuides && (
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-[var(--border-color)] text-xs text-[var(--text-sub)]">
@@ -169,85 +190,93 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
         </div>
       )}
 
-      {/* Keyboard Matrix */}
-      <div className="flex flex-col gap-1.5 sm:gap-2">
-        {KEYBOARD_ROWS.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex justify-center gap-1 sm:gap-1.5">
-            {row.map((item, keyIndex) => {
-              const isMatchCurrent =
-                (item.key === ' ' && normCurrent === ' ') ||
-                item.key.toLowerCase() === normCurrent;
+      {/* Keyboard Matrix (Horizontally scrollable if screen is narrower than standard matrix) */}
+      <div className="overflow-x-auto max-w-full pb-1">
+        <div className="min-w-[500px] sm:min-w-0 flex flex-col gap-1.5 sm:gap-2">
+          {KEYBOARD_ROWS.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex justify-center gap-1 sm:gap-1.5">
+              {row.map((item, keyIndex) => {
+                const isMatchCurrent =
+                  (item.key === ' ' && normCurrent === ' ') ||
+                  item.key.toLowerCase() === normCurrent;
 
-              const isMatchWrong =
-                normWrong &&
-                ((item.key === ' ' && normWrong === ' ') ||
-                  item.key.toLowerCase() === normWrong);
+                const isMatchWrong =
+                  normWrong &&
+                  ((item.key === ' ' && normWrong === ' ') ||
+                    item.key.toLowerCase() === normWrong);
 
-              const isMatchNext =
-                !isMatchCurrent &&
-                !isMatchWrong &&
-                ((item.key === ' ' && normNext === ' ') ||
-                  item.key.toLowerCase() === normNext);
+                const isMatchNext =
+                  !isMatchCurrent &&
+                  !isMatchWrong &&
+                  ((item.key === ' ' && normNext === ' ') ||
+                    item.key.toLowerCase() === normNext);
 
-              // Highlight Shift key if opposite shift is needed
-              const isShiftActive =
-                currentAssignment.needsShift &&
-                ((currentAssignment.shiftHand === 'right' && item.key === 'ShiftRight') ||
-                  (currentAssignment.shiftHand === 'left' && item.key === 'ShiftLeft'));
+                // Highlight Shift key if opposite shift is needed or virtual shift is active
+                const isShiftActive =
+                  (virtualShift && (item.key === 'ShiftLeft' || item.key === 'ShiftRight' || item.key === 'CapsLock')) ||
+                  (currentAssignment.needsShift &&
+                    ((currentAssignment.shiftHand === 'right' && item.key === 'ShiftRight') ||
+                      (currentAssignment.shiftHand === 'left' && item.key === 'ShiftLeft')));
 
-              const fingerStyle = showFingerGuides && FINGER_COLORS[item.finger];
-              const heatBg = getHeatmapColor(item.key.toLowerCase());
+                const fingerStyle = showFingerGuides && FINGER_COLORS[item.finger];
+                const heatBg = getHeatmapColor(item.key.toLowerCase());
 
-              // State-dependent classes (NEVER fractional scale to prevent blurry text)
-              let stateClasses = 'bg-[var(--key-bg)] text-[var(--key-text)] border border-[var(--border-color)] hover:border-[var(--text-sub)] keycap-3d';
+                // State-dependent classes (NEVER fractional scale to prevent blurry text)
+                let stateClasses = 'bg-[var(--key-bg)] text-[var(--key-text)] border border-[var(--border-color)] hover:border-[var(--text-sub)] keycap-3d';
 
-              if (isMatchWrong) {
-                // Wrong key briefly alerted in rose/red
-                stateClasses = 'bg-rose-600 text-white shadow-lg shadow-rose-600/40 border-rose-400 animate-pulse keycap-3d-active';
-              } else if (isMatchCurrent) {
-                if (isError) {
-                  stateClasses = 'bg-[var(--color-error)] text-white shadow-md shadow-[var(--color-error)]/40 border-transparent keycap-3d-active ring-2 ring-rose-400';
-                } else {
-                  stateClasses = 'bg-[var(--key-active)] text-white shadow-md shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)] keycap-3d-active';
+                if (isMatchWrong) {
+                  // Wrong key briefly alerted in rose/red
+                  stateClasses = 'bg-rose-600 text-white shadow-lg shadow-rose-600/40 border-rose-400 animate-pulse keycap-3d-active';
+                } else if (isMatchCurrent) {
+                  if (isError) {
+                    stateClasses = 'bg-[var(--color-error)] text-white shadow-md shadow-[var(--color-error)]/40 border-transparent keycap-3d-active ring-2 ring-rose-400';
+                  } else {
+                    stateClasses = 'bg-[var(--key-active)] text-white shadow-md shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)] keycap-3d-active';
+                  }
+                } else if (isShiftActive) {
+                  stateClasses = 'bg-amber-500/25 text-amber-300 border-amber-500/60 ring-2 ring-amber-400/50 animate-pulse keycap-3d';
+                } else if (isMatchNext) {
+                  stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)]/60 ring-1 ring-[var(--color-primary)]/40 keycap-3d';
                 }
-              } else if (isShiftActive) {
-                stateClasses = 'bg-amber-500/25 text-amber-300 border-amber-500/60 ring-2 ring-amber-400/50 animate-pulse keycap-3d';
-              } else if (isMatchNext) {
-                stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)]/60 ring-1 ring-[var(--color-primary)]/40 keycap-3d';
-              }
 
-              return (
-                <div
-                  key={keyIndex}
-                  style={heatBg ? { backgroundColor: heatBg } : undefined}
-                  className={`
-                    relative flex items-center justify-center
-                    h-8 sm:h-11 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-mono
-                    select-none transition-all duration-75 cursor-default
-                    ${item.width || 'w-7 sm:w-10'}
-                    ${stateClasses}
-                  `}
-                >
-                  {/* Key label - crisp rendering */}
-                  <span className="font-semibold">{item.display}</span>
+                return (
+                  <div
+                    key={keyIndex}
+                    style={heatBg ? { backgroundColor: heatBg } : undefined}
+                    onPointerDown={(e) => handlePointerDownKey(e, item)}
+                    role={onKeyPress ? 'button' : undefined}
+                    tabIndex={-1}
+                    className={`
+                      relative flex items-center justify-center
+                      h-8 sm:h-11 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-mono
+                      select-none transition-all duration-75 ${onKeyPress ? 'cursor-pointer active:scale-95' : 'cursor-default'}
+                      ${item.width || 'w-7 sm:w-10'}
+                      ${stateClasses}
+                    `}
+                  >
+                    {/* Key label - crisp rendering */}
+                    <span className="font-semibold">
+                      {virtualShift && item.key.length === 1 ? item.display.toUpperCase() : item.display}
+                    </span>
 
-                  {/* Tactile bumps for F and J anchors */}
-                  {(item.key === 'f' || item.key === 'j') && (
-                    <span className="absolute bottom-1 w-2.5 h-0.5 bg-[var(--text-sub)] rounded-full opacity-70" />
-                  )}
+                    {/* Tactile bumps for F and J anchors */}
+                    {(item.key === 'f' || item.key === 'j') && (
+                      <span className="absolute bottom-1 w-2.5 h-0.5 bg-[var(--text-sub)] rounded-full opacity-70" />
+                    )}
 
-                  {/* Finger color dot indicator on key corner */}
-                  {showFingerGuides && fingerStyle && !isMatchCurrent && !isMatchWrong && !isShiftActive && (
-                    <span
-                      className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-65"
-                      style={{ backgroundColor: fingerStyle.text }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                    {/* Finger color dot indicator on key corner */}
+                    {showFingerGuides && fingerStyle && !isMatchCurrent && !isMatchWrong && !isShiftActive && (
+                      <span
+                        className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-65"
+                        style={{ backgroundColor: fingerStyle.text }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

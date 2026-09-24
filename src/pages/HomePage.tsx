@@ -344,6 +344,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
                 showFingerGuides={true}
                 showHeatmap={settings.keyboardHeatmap}
                 keyStats={keyStats}
+                onKeyPress={(key) => {
+                  engine.handleKeyDown({
+                    key,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                  } as unknown as React.KeyboardEvent);
+                }}
               />
             </div>
           )}

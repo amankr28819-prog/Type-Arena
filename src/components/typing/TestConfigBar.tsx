@@ -114,9 +114,9 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
   return (
     <div className="w-full flex flex-col items-center gap-3">
       {/* Primary 3D Config Bar */}
-      <div className="card-3d card-3d-glass flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2.5 rounded-2xl border border-[var(--border-color)] shadow-lg text-xs sm:text-sm">
+      <div className="card-3d card-3d-glass flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2.5 rounded-2xl border border-[var(--border-color)] shadow-lg text-xs sm:text-sm max-w-full">
         {/* Modes with 3D Tactile Buttons */}
-        <div className="flex items-center gap-1 bg-[var(--bg-subtle)]/85 p-1 rounded-xl border border-[var(--border-color)]/60 shadow-inner">
+        <div className="flex flex-wrap items-center justify-center gap-1 bg-[var(--bg-subtle)]/85 p-1 rounded-xl border border-[var(--border-color)]/60 shadow-inner">
           <button
             onClick={() => onModeChange('time')}
             disabled={disabled}

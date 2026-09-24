@@ -161,29 +161,29 @@ export const HandPlacementVisualizer: React.FC<HandPlacementVisualizerProps> = (
 
         {/* 3D Anatomical Hand Contour Container */}
         <div
-          className={`relative p-3 sm:p-4 rounded-3xl border transition-all duration-200 card-3d ${
+          className={`relative p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl border transition-all duration-200 card-3d ${
             isHandActive
               ? 'border-[var(--color-primary)]/50 bg-[var(--bg-surface)] shadow-lg shadow-[var(--color-primary)]/10'
               : 'border-[var(--border-color)]/60 bg-[var(--bg-surface)]/80'
           }`}
           style={{
-            minWidth: compact ? '160px' : '205px'
+            minWidth: compact ? '140px' : 'min(160px, 44vw)'
           }}
         >
           {/* Palm Base Contour SVG (Subtle anatomy backing) */}
-          <div className="absolute inset-x-2 bottom-2 h-20 pointer-events-none opacity-30 rounded-2xl bg-gradient-to-t from-[var(--border-color)] to-transparent" />
+          <div className="absolute inset-x-2 bottom-2 h-16 sm:h-20 pointer-events-none opacity-30 rounded-2xl bg-gradient-to-t from-[var(--border-color)] to-transparent" />
 
           {/* Fingers Row */}
-          <div className="relative z-10 flex items-end justify-center gap-1.5 sm:gap-2 h-28 sm:h-32 pb-4">
+          <div className="relative z-10 flex items-end justify-center gap-1 sm:gap-2 h-24 sm:h-32 pb-2 sm:pb-4">
             {fingers.map((finger) => {
               const isActive = finger.id === activeFingerId;
               const isWrong = isError && finger.id === wrongFingerId;
               const isShift = isShiftHand && finger.code === targetAssignment.shiftFingerCode;
               const transform = getFingerTransform(finger);
 
-              // Height scaling for compact mode
-              const h = compact ? Math.round(finger.height * 0.85) : finger.height;
-              const w = compact ? Math.max(18, finger.width - 3) : finger.width;
+              // Height scaling for compact/mobile view
+              const h = compact ? Math.round(finger.height * 0.75) : Math.round(finger.height * 0.9);
+              const w = compact ? Math.max(16, finger.width - 4) : Math.max(18, finger.width - 2);
 
               return (
                 <div
@@ -313,8 +313,8 @@ export const HandPlacementVisualizer: React.FC<HandPlacementVisualizerProps> = (
         </div>
       </div>
 
-      {/* Hands Container */}
-      <div className="flex flex-col sm:flex-row items-center justify-around gap-6 sm:gap-8">
+      {/* Hands Container (Side by side on mobile with smooth horizontal scroll containment) */}
+      <div className="flex flex-row items-center justify-center gap-2 sm:gap-8 overflow-x-auto max-w-full pb-1">
         {renderHand('left', LEFT_FINGERS)}
         {renderHand('right', RIGHT_FINGERS)}
       </div>
