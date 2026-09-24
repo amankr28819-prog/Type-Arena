@@ -1,344 +1,329 @@
 import React from 'react';
+import {
+  getFingerForKey,
+  getFingerForChar,
+  type FingerId,
+  type ReachDirection,
+  type HandSide
+} from '../../lib/fingerMapping';
 
-export type FingerId =
-  | 'left-pinky'
-  | 'left-ring'
-  | 'left-middle'
-  | 'left-index'
-  | 'left-thumb'
-  | 'right-thumb'
-  | 'right-index'
-  | 'right-middle'
-  | 'right-ring'
-  | 'right-pinky';
+export { getFingerForKey, getFingerForChar };
 
-export interface FingerAssignment {
-  id: FingerId;
-  hand: 'left' | 'right';
-  name: string;
-  homeKey: string;
-  color: string;
-  reachDirection: 'home' | 'up' | 'down' | 'inner' | 'outer';
-}
-
-export function getFingerForChar(char: string): FingerAssignment {
-  const c = char ? char.toLowerCase() : '';
-
-  // Thumbs
-  if (c === ' ' || c === 'space') {
-    return {
-      id: 'right-thumb',
-      hand: 'right',
-      name: 'Thumbs',
-      homeKey: 'Space',
-      color: '#f59e0b',
-      reachDirection: 'home'
-    };
-  }
-
-  // Left Pinky
-  if (['a', 'q', 'z', '1', '`', '~', '!', 'tab', 'capslock'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['q', '1', '`', '~', '!'].includes(c)) reach = 'up';
-    else if (c === 'z') reach = 'down';
-    return {
-      id: 'left-pinky',
-      hand: 'left',
-      name: 'Left Pinky',
-      homeKey: 'A',
-      color: '#ec4899',
-      reachDirection: reach
-    };
-  }
-
-  // Left Ring
-  if (['s', 'w', 'x', '2', '@'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['w', '2', '@'].includes(c)) reach = 'up';
-    else if (c === 'x') reach = 'down';
-    return {
-      id: 'left-ring',
-      hand: 'left',
-      name: 'Left Ring',
-      homeKey: 'S',
-      color: '#a855f7',
-      reachDirection: reach
-    };
-  }
-
-  // Left Middle
-  if (['d', 'e', 'c', '3', '#'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['e', '3', '#'].includes(c)) reach = 'up';
-    else if (c === 'c') reach = 'down';
-    return {
-      id: 'left-middle',
-      hand: 'left',
-      name: 'Left Middle',
-      homeKey: 'D',
-      color: '#3b82f6',
-      reachDirection: reach
-    };
-  }
-
-  // Left Index
-  if (['f', 'r', 'v', '4', '$', 'g', 't', 'b', '5', '%'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['r', 't', '4', '5', '$', '%'].includes(c)) reach = 'up';
-    else if (['v', 'b'].includes(c)) reach = 'down';
-    else if (['g'].includes(c)) reach = 'inner';
-    return {
-      id: 'left-index',
-      hand: 'left',
-      name: 'Left Index',
-      homeKey: 'F',
-      color: '#10b981',
-      reachDirection: reach
-    };
-  }
-
-  // Right Index
-  if (['j', 'u', 'm', '7', '&', 'h', 'y', 'n', '6', '^'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['u', 'y', '6', '7', '^', '&'].includes(c)) reach = 'up';
-    else if (['m', 'n'].includes(c)) reach = 'down';
-    else if (['h'].includes(c)) reach = 'inner';
-    return {
-      id: 'right-index',
-      hand: 'right',
-      name: 'Right Index',
-      homeKey: 'J',
-      color: '#14b8a6',
-      reachDirection: reach
-    };
-  }
-
-  // Right Middle
-  if (['k', 'i', ',', '<', '8', '*'].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['i', '8', '*'].includes(c)) reach = 'up';
-    else if ([',', '<'].includes(c)) reach = 'down';
-    return {
-      id: 'right-middle',
-      hand: 'right',
-      name: 'Right Middle',
-      homeKey: 'K',
-      color: '#3b82f6',
-      reachDirection: reach
-    };
-  }
-
-  // Right Ring
-  if (['l', 'o', '.', '>', '9', '('].includes(c)) {
-    let reach: FingerAssignment['reachDirection'] = 'home';
-    if (['o', '9', '('].includes(c)) reach = 'up';
-    else if (['.', '>'].includes(c)) reach = 'down';
-    return {
-      id: 'right-ring',
-      hand: 'right',
-      name: 'Right Ring',
-      homeKey: 'L',
-      color: '#a855f7',
-      reachDirection: reach
-    };
-  }
-
-  // Right Pinky (default fallback for punctuation / right side)
-  let reach: FingerAssignment['reachDirection'] = 'home';
-  if (['p', '0', '-', '=', '[', ']', '_', '+', '{', '}'].includes(c)) reach = 'up';
-  else if (['/', '?'].includes(c)) reach = 'down';
-
-  return {
-    id: 'right-pinky',
-    hand: 'right',
-    name: 'Right Pinky',
-    homeKey: ';',
-    color: '#ec4899',
-    reachDirection: reach
-  };
-}
-
-interface HandPlacementVisualizerProps {
-  nextChar: string;
+export interface HandPlacementVisualizerProps {
+  /** The active expected character the user must press right now */
+  targetChar?: string;
+  /** Legacy alias for targetChar */
+  nextChar?: string;
+  /** The upcoming character after the active target */
+  upcomingChar?: string;
+  /** The most recently typed character */
   currentChar?: string;
+  /** Whether the user just made a mistake */
   isError?: boolean;
+  /** The mistyped key if an error occurred */
+  wrongChar?: string;
   className?: string;
   compact?: boolean;
 }
 
+interface FingerVisualConfig {
+  id: FingerId;
+  name: string;
+  code: string;
+  homeKey: string;
+  color: string;
+  hand: HandSide;
+  height: number;
+  width: number;
+  isAnchor?: boolean;
+}
+
+const LEFT_FINGERS: FingerVisualConfig[] = [
+  { id: 'left-pinky', name: 'Pinky', code: 'lp', homeKey: 'A', color: '#ec4899', hand: 'left', height: 72, width: 22 },
+  { id: 'left-ring', name: 'Ring', code: 'lr', homeKey: 'S', color: '#a855f7', hand: 'left', height: 86, width: 23 },
+  { id: 'left-middle', name: 'Middle', code: 'lm', homeKey: 'D', color: '#3b82f6', hand: 'left', height: 96, width: 24 },
+  { id: 'left-index', name: 'Index', code: 'li', homeKey: 'F', color: '#10b981', hand: 'left', height: 88, width: 25, isAnchor: true },
+  { id: 'left-thumb', name: 'Thumb', code: 'th', homeKey: 'Space', color: '#f59e0b', hand: 'left', height: 56, width: 26 }
+];
+
+const RIGHT_FINGERS: FingerVisualConfig[] = [
+  { id: 'right-thumb', name: 'Thumb', code: 'th', homeKey: 'Space', color: '#f59e0b', hand: 'right', height: 56, width: 26 },
+  { id: 'right-index', name: 'Index', code: 'ri', homeKey: 'J', color: '#14b8a6', hand: 'right', height: 88, width: 25, isAnchor: true },
+  { id: 'right-middle', name: 'Middle', code: 'rm', homeKey: 'K', color: '#3b82f6', hand: 'right', height: 96, width: 24 },
+  { id: 'right-ring', name: 'Ring', code: 'rr', homeKey: 'L', color: '#a855f7', hand: 'right', height: 86, width: 23 },
+  { id: 'right-pinky', name: 'Pinky', code: 'rp', homeKey: ';', color: '#ec4899', hand: 'right', height: 72, width: 22 }
+];
+
 export const HandPlacementVisualizer: React.FC<HandPlacementVisualizerProps> = ({
+  targetChar,
   nextChar,
+  upcomingChar,
   isError = false,
+  wrongChar = '',
   className = '',
   compact = false
 }) => {
-  const activeAssignment = getFingerForChar(nextChar);
-  const activeId = activeAssignment.id;
+  // Canonical target: targetChar takes precedence; fall back to nextChar for backwards compatibility
+  const activeChar = targetChar !== undefined ? targetChar : (nextChar || '');
+  const targetAssignment = getFingerForKey(activeChar);
+  const activeFingerId = targetAssignment.fingerId;
 
-  // Compute CSS transform animation based on reach direction
-  const getFingerTransform = (fingerId: FingerId) => {
-    if (fingerId !== activeId) return '';
+  // Wrong key analysis (does NOT change active target finger)
+  const wrongAssignment = wrongChar ? getFingerForKey(wrongChar) : null;
+  const wrongFingerId = wrongAssignment ? wrongAssignment.fingerId : null;
 
-    switch (activeAssignment.reachDirection) {
-      case 'up':
-        return 'translateY(-10px) scale(1.06)';
-      case 'down':
-        return 'translateY(8px) scale(0.95)';
-      case 'inner':
-        return activeAssignment.hand === 'left'
-          ? 'translate(8px, -4px) rotate(4deg)'
-          : 'translate(-8px, -4px) rotate(-4deg)';
-      case 'home':
-      default:
-        return 'translateY(3px) scale(0.98)';
+  // Upcoming key preview
+  const upcomingAssignment = upcomingChar ? getFingerForKey(upcomingChar) : null;
+
+  /**
+   * Anatomically natural finger reach translation & rotation
+   * Only the target finger moves; other fingers stay anchored at home row.
+   */
+  const getFingerTransform = (finger: FingerVisualConfig): string => {
+    if (finger.id === activeFingerId) {
+      const reach: ReachDirection = targetAssignment.reachDirection;
+      const lower = activeChar.toLowerCase();
+
+      // Specific reach nuances for QWERTY rows
+      if (reach === 'up') {
+        if (lower === 't') {
+          // Left index reaching up and slightly right for T
+          return 'translate(5px, -15px) rotate(4deg)';
+        }
+        if (lower === 'y') {
+          // Right index reaching up and slightly left for Y
+          return 'translate(-5px, -15px) rotate(-4deg)';
+        }
+        if (lower === 'r' || lower === 'e' || lower === 'w' || lower === 'q') {
+          return 'translate(0px, -14px)';
+        }
+        if (lower === 'u' || lower === 'i' || lower === 'o' || lower === 'p') {
+          return 'translate(0px, -14px)';
+        }
+        return 'translateY(-14px)';
+      }
+
+      if (reach === 'inner') {
+        // G or H inner reach
+        return finger.hand === 'left'
+          ? 'translate(10px, -4px) rotate(5deg)'
+          : 'translate(-10px, -4px) rotate(-5deg)';
+      }
+
+      if (reach === 'down') {
+        if (lower === 'b') {
+          return 'translate(6px, 12px) rotate(4deg)';
+        }
+        if (lower === 'n') {
+          return 'translate(-6px, 12px) rotate(-4deg)';
+        }
+        return 'translateY(11px)';
+      }
+
+      // Home key tap
+      return 'translateY(2px)';
     }
+
+    // Passive fingers remain in resting home position
+    if (finger.id === 'left-thumb') {
+      return 'rotate(-20deg) translateY(4px)';
+    }
+    if (finger.id === 'right-thumb') {
+      return 'rotate(20deg) translateY(4px)';
+    }
+
+    return 'translateY(0)';
   };
 
-  const renderFinger = (
-    id: FingerId,
-    _name: string,
-    homeKey: string,
-    color: string,
-    width: number,
-    height: number,
-    radius: number,
-    hasNub: boolean = false
-  ) => {
-    const isActive = id === activeId;
-    const transform = getFingerTransform(id);
+  const renderHand = (side: HandSide, fingers: FingerVisualConfig[]) => {
+    const isHandActive = targetAssignment.hand === side;
+    const isShiftHand = targetAssignment.needsShift && targetAssignment.shiftHand === side;
 
     return (
-      <div
-        key={id}
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          borderRadius: `${radius}px`,
-          transform,
-          backgroundColor: isActive
-            ? 'color-mix(in srgb, var(--color-primary) 22%, var(--bg-surface))'
-            : undefined,
-          transition: 'transform 0.12s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.15s ease, background 0.15s ease'
-        }}
-        className={`relative flex flex-col items-center justify-between py-2 border transition-all select-none ${
-          isActive
-            ? 'z-20 border-[var(--color-primary)] shadow-[0_0_18px_var(--theme-glow)] brightness-115'
-            : 'border-[var(--border-color)]/70 bg-[var(--bg-subtle)]/70 opacity-80 hover:opacity-100'
-        } ${isError && isActive ? '!border-rose-500 !shadow-[0_0_16px_rgba(244,63,94,0.6)]' : ''}`}
-      >
-        {/* Fingertip Highlight Glow Pad */}
-        <div
-          className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all ${
-            isActive
-              ? 'scale-110 ring-2 ring-[var(--color-primary)] shadow-sm'
-              : 'opacity-40'
-          }`}
-          style={{ backgroundColor: color }}
-        >
-          {isActive && (
-            <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping opacity-75" />
+      <div className="relative flex flex-col items-center">
+        {/* Active Hand Label */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span
+            className={`text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              isHandActive
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--text-sub)] opacity-70'
+            }`}
+          >
+            {side === 'left' ? 'Left Hand' : 'Right Hand'}
+          </span>
+          {isShiftHand && (
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
+              Hold Shift
+            </span>
           )}
         </div>
 
-        {/* Tactile Nub for F and J */}
-        {hasNub && (
-          <div
-            className="w-1.5 h-0.5 rounded-full bg-[var(--text-sub)] shadow-inner my-1 opacity-70"
-            title="Tactile Nub Home Row Guide"
-          />
-        )}
-
-        {/* Home Key resting guide */}
-        <span
-          className={`text-[10px] font-mono font-bold uppercase transition-colors ${
-            isActive ? 'text-[var(--color-primary)]' : 'text-[var(--text-sub)]'
+        {/* 3D Anatomical Hand Contour Container */}
+        <div
+          className={`relative p-3 sm:p-4 rounded-3xl border transition-all duration-200 card-3d ${
+            isHandActive
+              ? 'border-[var(--color-primary)]/50 bg-[var(--bg-surface)] shadow-lg shadow-[var(--color-primary)]/10'
+              : 'border-[var(--border-color)]/60 bg-[var(--bg-surface)]/80'
           }`}
+          style={{
+            minWidth: compact ? '160px' : '205px'
+          }}
         >
-          {homeKey}
-        </span>
+          {/* Palm Base Contour SVG (Subtle anatomy backing) */}
+          <div className="absolute inset-x-2 bottom-2 h-20 pointer-events-none opacity-30 rounded-2xl bg-gradient-to-t from-[var(--border-color)] to-transparent" />
+
+          {/* Fingers Row */}
+          <div className="relative z-10 flex items-end justify-center gap-1.5 sm:gap-2 h-28 sm:h-32 pb-4">
+            {fingers.map((finger) => {
+              const isActive = finger.id === activeFingerId;
+              const isWrong = isError && finger.id === wrongFingerId;
+              const isShift = isShiftHand && finger.code === targetAssignment.shiftFingerCode;
+              const transform = getFingerTransform(finger);
+
+              // Height scaling for compact mode
+              const h = compact ? Math.round(finger.height * 0.85) : finger.height;
+              const w = compact ? Math.max(18, finger.width - 3) : finger.width;
+
+              return (
+                <div
+                  key={finger.id}
+                  style={{
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    transform,
+                    transition: 'transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease'
+                  }}
+                  className={`relative flex flex-col items-center justify-between py-1.5 sm:py-2 rounded-2xl border select-none cursor-default ${
+                    isWrong
+                      ? 'z-30 border-rose-500 bg-rose-500/25 shadow-[0_0_16px_rgba(244,63,94,0.7)] animate-pulse'
+                      : isActive
+                      ? 'z-20 border-[var(--color-primary)] bg-[var(--color-primary)]/15 shadow-[0_0_18px_var(--theme-glow)]'
+                      : isShift
+                      ? 'z-20 border-amber-400 bg-amber-400/20 shadow-[0_0_14px_rgba(251,191,36,0.6)] animate-pulse'
+                      : 'border-[var(--border-color)]/70 bg-[var(--bg-subtle)]/75 opacity-75 hover:opacity-100'
+                  }`}
+                >
+                  {/* Fingertip Light Indicator Pad */}
+                  <div
+                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center transition-all ${
+                      isActive || isShift
+                        ? 'ring-2 ring-[var(--color-primary)] shadow-sm'
+                        : 'opacity-40'
+                    }`}
+                    style={{
+                      backgroundColor: isWrong ? '#f43f5e' : isShift ? '#f59e0b' : finger.color
+                    }}
+                  >
+                    {isActive && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping opacity-75" />
+                    )}
+                  </div>
+
+                  {/* Phalanx Joint Creases (Anatomical realism) */}
+                  <div className="w-full flex flex-col items-center gap-1.5 opacity-35">
+                    <div className="w-2.5 h-[1px] bg-[var(--text-sub)] rounded-full" />
+                    <div className="w-3.5 h-[1px] bg-[var(--text-sub)] rounded-full" />
+                  </div>
+
+                  {/* Home Key Label & Anchor Bump */}
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`text-[9px] sm:text-[10px] font-mono font-bold leading-none ${
+                        isActive
+                          ? 'text-[var(--color-primary)]'
+                          : isWrong
+                          ? 'text-rose-400'
+                          : 'text-[var(--text-sub)]'
+                      }`}
+                    >
+                      {finger.homeKey}
+                    </span>
+
+                    {/* Physical anchor bump on F and J */}
+                    {finger.isAnchor && (
+                      <span className="w-2 h-0.5 mt-0.5 bg-[var(--color-primary)] rounded-full opacity-80" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Knuckle Arch Accent */}
+          <div className="w-full h-1 bg-[var(--border-color)]/50 rounded-full" />
+        </div>
       </div>
     );
   };
 
   return (
     <div
-      className={`card-3d p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface)]/90 border border-[var(--border-color)] shadow-md flex flex-col items-center justify-between gap-4 ${className}`}
+      className={`w-full max-w-4xl mx-auto rounded-3xl p-4 sm:p-5 card-3d border border-[var(--border-color)] shadow-xl ${className}`}
     >
-      {/* Live Finger Guidance Header */}
-      <div className="w-full flex items-center justify-between border-b border-[var(--border-color)] pb-3 px-1">
+      {/* Header Guidance Banner: Single Source of Truth */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--border-color)]">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[var(--text-sub)] uppercase tracking-wider">
-            Hand Placement & Finger Reach
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)] animate-pulse" />
+          <span className="text-xs font-semibold text-[var(--text-sub)] uppercase tracking-wider">
+            Touch-Typing Finger Guidance:
           </span>
-          <span
-            className="w-2 h-2 rounded-full animate-pulse"
-            style={{ backgroundColor: activeAssignment.color }}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-sub)]">Next:</span>
-          <kbd className="px-2.5 py-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-color)] text-[var(--color-primary)] font-mono font-bold text-xs shadow-xs">
-            {nextChar === ' ' ? 'Space ␣' : nextChar || '—'}
-          </kbd>
-          <span className="hidden sm:inline text-xs font-semibold text-[var(--text-main)]">
-            {activeAssignment.name}
-          </span>
-        </div>
-      </div>
-
-      {/* Visual Anatomical Dual-Hand Deck */}
-      <div className="w-full flex items-end justify-center gap-6 sm:gap-14 py-2 overflow-x-auto">
-        {/* LEFT HAND */}
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-[11px] font-bold uppercase text-[var(--text-sub)] tracking-wider">
-            Left Hand
-          </span>
-
-          <div className="flex items-end gap-1.5 sm:gap-2 bg-[var(--bg-subtle)]/40 p-2.5 rounded-2xl border border-[var(--border-color)]/60">
-            {/* Left Pinky */}
-            {renderFinger('left-pinky', 'Pinky', 'A', '#ec4899', compact ? 26 : 30, compact ? 68 : 80, 10)}
-            {/* Left Ring */}
-            {renderFinger('left-ring', 'Ring', 'S', '#a855f7', compact ? 26 : 30, compact ? 82 : 95, 10)}
-            {/* Left Middle */}
-            {renderFinger('left-middle', 'Middle', 'D', '#3b82f6', compact ? 28 : 32, compact ? 92 : 108, 10)}
-            {/* Left Index (with F nub) */}
-            {renderFinger('left-index', 'Index', 'F', '#10b981', compact ? 28 : 32, compact ? 82 : 96, 10, true)}
-            {/* Left Thumb */}
-            {renderFinger('left-thumb', 'Thumb', '␣', '#f59e0b', compact ? 26 : 30, compact ? 54 : 64, 8)}
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold text-xs border shadow-xs"
+            style={{
+              backgroundColor: targetAssignment.color + '20',
+              borderColor: targetAssignment.color,
+              color: targetAssignment.color
+            }}
+          >
+            <span>Target:</span>
+            <span className="font-mono text-sm px-1.5 py-0.2 bg-[var(--bg-main)] rounded">
+              {activeChar === ' ' ? 'Space' : activeChar.toUpperCase()}
+            </span>
+            <span>({targetAssignment.fingerName})</span>
           </div>
+
+          {targetAssignment.needsShift && targetAssignment.shiftFingerName && (
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Hold {targetAssignment.shiftFingerName}
+            </span>
+          )}
         </div>
 
-        {/* RIGHT HAND */}
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-[11px] font-bold uppercase text-[var(--text-sub)] tracking-wider">
-            Right Hand
-          </span>
+        {/* Upcoming Key or Reach Description */}
+        <div className="flex items-center gap-3 text-xs text-[var(--text-sub)] font-medium">
+          {upcomingAssignment && (
+            <div className="flex items-center gap-1">
+              <span>Next up:</span>
+              <strong className="font-mono text-[var(--text-main)] px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+                {upcomingChar === ' ' ? '␣' : upcomingChar?.toUpperCase()}
+              </strong>
+              <span className="text-[11px] opacity-75">({upcomingAssignment.fingerName})</span>
+            </div>
+          )}
 
-          <div className="flex items-end gap-1.5 sm:gap-2 bg-[var(--bg-subtle)]/40 p-2.5 rounded-2xl border border-[var(--border-color)]/60">
-            {/* Right Thumb */}
-            {renderFinger('right-thumb', 'Thumb', '␣', '#f59e0b', compact ? 26 : 30, compact ? 54 : 64, 8)}
-            {/* Right Index (with J nub) */}
-            {renderFinger('right-index', 'Index', 'J', '#14b8a6', compact ? 28 : 32, compact ? 82 : 96, 10, true)}
-            {/* Right Middle */}
-            {renderFinger('right-middle', 'Middle', 'K', '#3b82f6', compact ? 28 : 32, compact ? 92 : 108, 10)}
-            {/* Right Ring */}
-            {renderFinger('right-ring', 'Ring', 'L', '#a855f7', compact ? 26 : 30, compact ? 82 : 95, 10)}
-            {/* Right Pinky */}
-            {renderFinger('right-pinky', 'Pinky', ';', '#ec4899', compact ? 26 : 30, compact ? 68 : 80, 10)}
+          <div className="hidden md:flex items-center gap-1 text-[11px]">
+            <span>Reach:</span>
+            <strong className="text-[var(--text-main)] capitalize">
+              {targetAssignment.reachDirection === 'home'
+                ? 'Home Row'
+                : `${targetAssignment.reachDirection} reach`}
+            </strong>
           </div>
         </div>
       </div>
 
-      {/* Tactile Feedback Footer */}
-      <div className="w-full flex items-center justify-between text-[11px] text-[var(--text-sub)] border-t border-[var(--border-color)]/60 pt-2 px-1 font-mono">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />
-          <span>Rest fingers on ASDF &amp; JKL; anchors</span>
-        </div>
-        <div>
-          <span>Target Finger: <strong className="text-[var(--text-main)] font-bold">{activeAssignment.name}</strong></span>
-        </div>
+      {/* Hands Container */}
+      <div className="flex flex-col sm:flex-row items-center justify-around gap-6 sm:gap-8">
+        {renderHand('left', LEFT_FINGERS)}
+        {renderHand('right', RIGHT_FINGERS)}
+      </div>
+
+      {/* Touch-Typing Posture Tip */}
+      <div className="mt-3.5 pt-2.5 border-t border-[var(--border-color)]/60 text-center text-[11px] text-[var(--text-sub)]">
+        Keep wrists elevated and gently hovering above the desk. Keep index fingers anchored on the{' '}
+        <strong className="text-[var(--color-primary)]">F</strong> and{' '}
+        <strong className="text-[var(--color-primary)]">J</strong> tactile bumps.
       </div>
     </div>
   );

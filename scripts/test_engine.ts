@@ -235,6 +235,22 @@ assert(eFinger.name === 'Left Middle' && eFinger.reachDirection === 'up', `Key '
 const spaceFinger = getFingerForChar(' ');
 assert(spaceFinger.name === 'Thumbs' && spaceFinger.hand === 'right', `Key ' ' maps to thumb (got ${spaceFinger.name})`);
 
+// Explicit Critical Tests: T, D, K, Shift
+const tFinger = getFingerForChar('t');
+assert(tFinger.name === 'Left Index' && tFinger.fingerCode === 'li' && tFinger.reachDirection === 'up', `Key 't' maps to Left Index up (got ${tFinger.name})`);
+
+const dFinger = getFingerForChar('d');
+assert(dFinger.name === 'Left Middle' && dFinger.fingerCode === 'lm' && dFinger.reachDirection === 'home', `Key 'd' maps to Left Middle home (got ${dFinger.name})`);
+
+const kFinger = getFingerForChar('k');
+assert(kFinger.name === 'Right Middle' && kFinger.fingerCode === 'rm' && kFinger.reachDirection === 'home', `Key 'k' maps to Right Middle home (got ${kFinger.name})`);
+
+const capTFinger = getFingerForChar('T');
+assert(capTFinger.name === 'Left Index' && capTFinger.needsShift && capTFinger.shiftFingerCode === 'rp', `Capital 'T' maps to Left Index + Right Pinky Shift (got ${capTFinger.shiftFingerName})`);
+
+const capPFinger = getFingerForChar('P');
+assert(capPFinger.name === 'Right Pinky' && capPFinger.needsShift && capPFinger.shiftFingerCode === 'lp', `Capital 'P' maps to Right Pinky + Left Pinky Shift (got ${capPFinger.shiftFingerName})`);
+
 // Test adaptive practice generation from weak keys
 const adaptiveText = generateAdaptivePracticeText(['d', 'k'], ['dk', 'kd']);
 assert(adaptiveText.length > 20, `Adaptive practice text generated successfully (${adaptiveText.length} chars)`);

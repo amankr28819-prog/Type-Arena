@@ -22,12 +22,28 @@
     --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
   }
 
+  /* Universal font smoothing & prevent text blur on transformed hardware-accelerated nodes */
+  *, *::before, *::after {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     background-color: var(--bg-main);
     color: var(--text-main);
     font-family: var(--font-ui);
     min-height: 100vh;
     transition: background-color 0.25s ease, color 0.25s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* Custom scrollbar */
@@ -59,122 +75,62 @@
 }
 
 .caret-blink {
-  animation: caretBlink 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: caretBlink 1s ease-in-out infinite;
 }
 
-.caret-smooth {
+.glow-active {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Smooth Caret Transitions */
+.smooth-caret-transition {
   transition: left 0.08s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.08s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-/* Caret styles */
-.caret-line {
-  width: 2.5px;
-  background-color: var(--color-caret);
-  border-radius: 2px;
+/* Subtle Floating Elements for Hero 3D */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
-.caret-block {
-  background-color: var(--color-caret);
-  opacity: 0.35;
-  border-radius: 2px;
+.animate-float-gentle {
+  animation: floatGentle 5s ease-in-out infinite;
 }
 
-.caret-underline {
-  height: 3px;
-  background-color: var(--color-caret);
-  border-radius: 2px;
-  align-self: flex-end;
-  margin-bottom: 2px;
+@keyframes floatGentleDelayed {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-.caret-box {
-  border: 2px solid var(--color-caret);
-  border-radius: 3px;
-  background: transparent;
-}
-
-/* Typing text styles */
-.typing-char {
-  position: relative;
-  transition: color 0.05s ease, background-color 0.05s ease;
-}
-
-.typing-char-pending {
-  color: var(--text-sub);
-}
-
-.typing-char-correct {
-  color: var(--color-correct);
-}
-
-.typing-char-incorrect {
-  color: var(--color-error);
-  background-color: var(--color-error-bg);
-  border-radius: 2px;
-}
-
-.typing-char-extra {
-  color: var(--color-error);
-  opacity: 0.8;
-  text-decoration: underline wavy;
-}
-
-/* Blind mode overrides */
-.blind-mode .typing-char-correct,
-.blind-mode .typing-char-incorrect {
-  color: var(--text-main);
-  background-color: transparent;
-}
-
-/* High contrast mode */
-.high-contrast {
-  --bg-main: #000000 !important;
-  --bg-surface: #121212 !important;
-  --bg-subtle: #242424 !important;
-  --border-color: #ffffff !important;
-  --text-main: #ffffff !important;
-  --text-sub: #a1a1aa !important;
-  --color-primary: #facc15 !important;
-  --color-correct: #4ade80 !important;
-  --color-error: #ef4444 !important;
-  --color-caret: #facc15 !important;
-}
-
-/* Reduced motion */
-.reduced-motion * {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
+.animate-float-delayed {
+  animation: floatGentleDelayed 6s ease-in-out 1.5s infinite;
 }
 
 /* 3D Depth, Card Elevation & Battle FX */
-.card-3d {
-  transform-style: preserve-3d;
-  perspective: 1000px;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
-}
-
-.card-3d:hover {
-  transform: translateY(-3px) scale(1.005);
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.45), 0 0 20px 2px rgba(56, 189, 248, 0.12);
-}
-
 @keyframes floatDamage {
   0% {
     opacity: 0;
-    transform: translateY(0) scale(0.85);
+    transform: translateY(0);
   }
   25% {
     opacity: 1;
-    transform: translateY(-12px) scale(1.15);
+    transform: translateY(-12px);
   }
   80% {
     opacity: 1;
-    transform: translateY(-24px) scale(1);
+    transform: translateY(-24px);
   }
   100% {
     opacity: 0;
-    transform: translateY(-34px) scale(0.9);
+    transform: translateY(-34px);
   }
 }
 
@@ -193,8 +149,6 @@
 .animate-shake {
   animation: shakeHit 0.35s ease-in-out;
 }
-
-
 
 @keyframes slashArc {
   0% { stroke-dasharray: 0, 200; opacity: 0; }
@@ -222,7 +176,7 @@
   --card-perspective: 1000px;
 }
 
-/* 2. Physical 3D Buttons */
+/* 2. Physical 3D Buttons (Crisp text with pure translation) */
 .btn-3d {
   position: relative;
   display: inline-flex;
@@ -238,16 +192,20 @@
   transform: translateY(0);
   user-select: none;
   cursor: pointer;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .btn-3d:hover {
-  transform: translateY(-2px) scale(1.015);
+  transform: translateY(-2px);
   box-shadow: 0 6px 0 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(0, 0, 0, 0.3), 0 0 16px var(--theme-glow);
-  filter: brightness(1.04);
+  filter: brightness(1.05);
 }
 
 .btn-3d:active {
-  transform: translateY(3px) scale(0.985);
+  transform: translateY(2px);
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
   filter: brightness(0.96);
 }
@@ -279,22 +237,22 @@
   transform: translateY(1px);
 }
 
-/* 3. Physical 3D Cards & Tilt Surfaces */
+/* 3. Physical 3D Cards & Elevation Surfaces (Razor-sharp typography) */
 .card-3d {
   position: relative;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 1.25rem;
   box-shadow: var(--depth-shadow-md);
-  transform-style: preserve-3d;
-  perspective: var(--card-perspective);
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
               border-color 0.2s ease;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .card-3d:hover {
-  transform: translateY(-4px) scale(1.008);
+  transform: translateY(-3px);
   box-shadow: var(--depth-shadow-lg);
   border-color: color-mix(in srgb, var(--color-primary) 40%, var(--border-color));
 }
@@ -315,6 +273,7 @@
   box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 8px rgba(0, 0, 0, 0.25);
   transition: transform 0.06s ease, box-shadow 0.06s ease, background-color 0.1s ease, color 0.1s ease;
   user-select: none;
+  backface-visibility: hidden;
 }
 
 .keycap-3d:hover {
@@ -324,7 +283,7 @@
 
 .keycap-3d:active,
 .keycap-3d-active {
-  transform: translateY(3px) !important;
+  transform: translateY(2px) !important;
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
   background: var(--key-active) !important;
   color: var(--bg-main) !important;
@@ -359,50 +318,50 @@
   box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.6), 0 0 45px -4px var(--theme-glow);
 }
 
-/* 6. Section & Page Transitions */
+/* 6. Section & Page Transitions (Pure translation & opacity without fractional scale blur) */
 @keyframes sectionEnter {
   0% {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes sectionExit {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
   100% {
     opacity: 0;
-    transform: translateY(-10px) scale(0.99);
+    transform: translateY(-8px);
   }
 }
 
 .animate-section-enter {
-  animation: sectionEnter 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: sectionEnter 0.24s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
 .animate-section-exit {
-  animation: sectionExit 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: sectionExit 0.18s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 @keyframes staggerItem {
   0% {
     opacity: 0;
-    transform: translateY(18px) scale(0.97);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-stagger-item {
-  animation: staggerItem 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: staggerItem 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
 /* 7. Subtle Cyber Grid & Atmosphere */
@@ -428,10 +387,10 @@
 }
 
 .intensity-high .card-3d:hover {
-  transform: translateY(-6px) scale(1.015);
+  transform: translateY(-5px);
 }
 .intensity-high .btn-3d:hover {
-  transform: translateY(-3px) scale(1.025);
+  transform: translateY(-3px);
 }
 
 /* 9. UI Depth Levels */

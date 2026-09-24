@@ -381,13 +381,17 @@ export const LearnPage: React.FC = () => {
                 if (p && p.bestWpm > maxLessonWpm) maxLessonWpm = p.bestWpm;
               });
 
+              const isCurrentLesson = lesson.id === currentContinue.lesson.id && !isCompleted;
+
               return (
                 <Card3D
                   key={lesson.id}
                   onClick={() => handleOpenLesson(lesson)}
                   className={`group p-6 rounded-3xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-5 ${
                     isCompleted
-                      ? 'border-emerald-500/40 bg-[var(--bg-surface)] hover:border-emerald-500/70'
+                      ? 'border-emerald-500/40 bg-[var(--bg-surface)] hover:border-emerald-500/70 shadow-md'
+                      : isCurrentLesson
+                      ? 'border-[var(--color-primary)] bg-[var(--bg-surface)] ring-2 ring-[var(--color-primary)]/60 shadow-xl shadow-[var(--color-primary)]/15'
                       : 'border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-[var(--color-primary)]'
                   }`}
                 >
@@ -397,6 +401,11 @@ export const LearnPage: React.FC = () => {
                         <span className="text-xs font-mono font-bold text-[var(--color-primary)]">
                           Lesson {lesson.order}
                         </span>
+                        {isCurrentLesson && (
+                          <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/40 animate-pulse">
+                            Current Focus
+                          </span>
+                        )}
                         <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--text-sub)] border border-[var(--border-color)]">
                           {lesson.tier}
                         </span>

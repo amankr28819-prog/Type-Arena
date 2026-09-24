@@ -150,7 +150,35 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
   const layout = settings.layout || 'classic';
 
   return (
-    <div className="w-full flex flex-col items-center gap-6 py-4 sm:py-8 px-4">
+    <div className="w-full flex flex-col items-center gap-6 py-4 sm:py-8 px-4 relative">
+      {/* Subtle 3D Ambient Floating Keycaps on Flanks */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-0 overflow-hidden hidden xl:block transition-opacity duration-300 ${
+          engine.isActive ? 'opacity-10' : 'opacity-35'
+        }`}
+      >
+        <div className="absolute left-10 top-1/4 animate-float-gentle">
+          <div className="w-12 h-12 rounded-2xl keycap-3d flex items-center justify-center font-mono font-bold text-sm text-[var(--color-primary)] border border-[var(--border-color)] shadow-xl">
+            T
+          </div>
+        </div>
+        <div className="absolute left-16 top-2/3 animate-float-delayed">
+          <div className="w-12 h-12 rounded-2xl keycap-3d flex items-center justify-center font-mono font-bold text-sm text-[var(--text-sub)] border border-[var(--border-color)] shadow-lg">
+            F
+          </div>
+        </div>
+        <div className="absolute right-10 top-1/3 animate-float-delayed">
+          <div className="w-12 h-12 rounded-2xl keycap-3d flex items-center justify-center font-mono font-bold text-sm text-[var(--color-primary)] border border-[var(--border-color)] shadow-xl">
+            J
+          </div>
+        </div>
+        <div className="absolute right-14 top-3/4 animate-float-gentle">
+          <div className="w-16 h-10 rounded-2xl keycap-3d flex items-center justify-center font-mono text-xs text-[var(--text-sub)] border border-[var(--border-color)] shadow-lg">
+            Space
+          </div>
+        </div>
+      </div>
+
       {/* If test is completed, render Result Screen */}
       {completedResult ? (
         <ResultModal

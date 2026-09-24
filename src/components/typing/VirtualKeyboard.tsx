@@ -1,33 +1,22 @@
 import React from 'react';
 import type { KeyAnalytics } from '../../types';
+import { FINGER_COLORS, getFingerForKey, type FingerCode } from '../../lib/fingerMapping';
 
 interface VirtualKeyboardProps {
   currentKey?: string;
   nextKey?: string;
+  wrongKey?: string;
   isError?: boolean;
   showFingerGuides?: boolean;
   showHeatmap?: boolean;
   keyStats?: Record<string, KeyAnalytics>;
 }
 
-// Finger assignment color badges
-const FINGER_COLORS: Record<string, { bg: string; text: string; name: string }> = {
-  lp: { bg: 'rgba(236, 72, 153, 0.18)', text: '#f472b6', name: 'Left Pinky' },
-  lr: { bg: 'rgba(168, 85, 247, 0.18)', text: '#c084fc', name: 'Left Ring' },
-  lm: { bg: 'rgba(59, 130, 246, 0.18)', text: '#60a5fa', name: 'Left Middle' },
-  li: { bg: 'rgba(16, 185, 129, 0.18)', text: '#34d399', name: 'Left Index' },
-  th: { bg: 'rgba(245, 158, 11, 0.18)', text: '#fbbf24', name: 'Thumbs' },
-  ri: { bg: 'rgba(20, 184, 166, 0.18)', text: '#2dd4bf', name: 'Right Index' },
-  rm: { bg: 'rgba(59, 130, 246, 0.18)', text: '#60a5fa', name: 'Right Middle' },
-  rr: { bg: 'rgba(168, 85, 247, 0.18)', text: '#c084fc', name: 'Right Ring' },
-  rp: { bg: 'rgba(236, 72, 153, 0.18)', text: '#f472b6', name: 'Right Pinky' },
-};
-
 interface KeyDef {
   key: string;
   display: string;
   width?: string;
-  finger: string;
+  finger: FingerCode;
 }
 
 const KEYBOARD_ROWS: KeyDef[][] = [
@@ -48,15 +37,15 @@ const KEYBOARD_ROWS: KeyDef[][] = [
     { key: '=', display: '=', finger: 'rp' },
     { key: 'Backspace', display: '⌫', width: 'w-16 sm:w-20', finger: 'rp' },
   ],
-  // Top row
+  // Top row (Q W E R T Y U I O P)
   [
     { key: 'Tab', display: 'Tab', width: 'w-12 sm:w-16', finger: 'lp' },
     { key: 'q', display: 'Q', finger: 'lp' },
     { key: 'w', display: 'W', finger: 'lr' },
     { key: 'e', display: 'E', finger: 'lm' },
     { key: 'r', display: 'R', finger: 'li' },
-    { key: 't', display: 'T', finger: 'li' },
-    { key: 'y', display: 'Y', finger: 'ri' },
+    { key: 't', display: 'T', finger: 'li' }, // CANONICAL: Left Index
+    { key: 'y', display: 'Y', finger: 'ri' }, // CANONICAL: Right Index
     { key: 'u', display: 'U', finger: 'ri' },
     { key: 'i', display: 'I', finger: 'rm' },
     { key: 'o', display: 'O', finger: 'rr' },
@@ -65,23 +54,23 @@ const KEYBOARD_ROWS: KeyDef[][] = [
     { key: ']', display: ']', finger: 'rp' },
     { key: '\\', display: '\\', width: 'w-10 sm:w-14', finger: 'rp' },
   ],
-  // Home row
+  // Home row (A S D F G H J K L ;)
   [
     { key: 'CapsLock', display: 'Caps', width: 'w-14 sm:w-18', finger: 'lp' },
     { key: 'a', display: 'A', finger: 'lp' },
     { key: 's', display: 'S', finger: 'lr' },
     { key: 'd', display: 'D', finger: 'lm' },
-    { key: 'f', display: 'F', finger: 'li' },
+    { key: 'f', display: 'F', finger: 'li' }, // Tactile anchor bump
     { key: 'g', display: 'G', finger: 'li' },
     { key: 'h', display: 'H', finger: 'ri' },
-    { key: 'j', display: 'J', finger: 'ri' },
+    { key: 'j', display: 'J', finger: 'ri' }, // Tactile anchor bump
     { key: 'k', display: 'K', finger: 'rm' },
     { key: 'l', display: 'L', finger: 'rr' },
     { key: ';', display: ';', finger: 'rp' },
     { key: "'", display: "'", finger: 'rp' },
     { key: 'Enter', display: 'Enter ↵', width: 'w-16 sm:w-22', finger: 'rp' },
   ],
-  // Bottom row
+  // Bottom row (Z X C V B N M , . /)
   [
     { key: 'ShiftLeft', display: 'Shift', width: 'w-16 sm:w-22', finger: 'lp' },
     { key: 'z', display: 'Z', finger: 'lp' },
@@ -109,6 +98,7 @@ const KEYBOARD_ROWS: KeyDef[][] = [
 export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   currentKey = '',
   nextKey = '',
+  wrongKey = '',
   isError = false,
   showFingerGuides = true,
   showHeatmap = false,
@@ -116,12 +106,14 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
 }) => {
   const normCurrent = currentKey.toLowerCase();
   const normNext = nextKey.toLowerCase();
+  const normWrong = wrongKey.toLowerCase();
+
+  const currentAssignment = getFingerForKey(currentKey);
 
   const getHeatmapColor = (keyChar: string) => {
     if (!showHeatmap || !keyStats[keyChar]) return null;
     const stat = keyStats[keyChar];
     if (stat.totalPresses === 0) return null;
-    // Error rate 0% -> green, 20%+ -> red
     const rate = Math.min(stat.errorRate, 30);
     const ratio = rate / 30;
     return `rgba(239, 68, 68, ${0.15 + ratio * 0.7})`;
@@ -131,27 +123,43 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-5 rounded-3xl card-3d border border-[var(--border-color)] shadow-2xl transition-all">
       {/* Keyboard Header / Finger Indicators */}
       {showFingerGuides && (
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-[var(--border-color)] text-xs text-[var(--text-sub)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-[var(--border-color)] text-xs text-[var(--text-sub)]">
           <div className="flex items-center gap-1.5">
-            <span className="font-medium text-[var(--text-main)]">Finger Map:</span>
-            <div className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lp.bg, color: FINGER_COLORS.lp.text }}>Pinky</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lr.bg, color: FINGER_COLORS.lr.text }}>Ring</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lm.bg, color: FINGER_COLORS.lm.text }}>Middle</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.li.bg, color: FINGER_COLORS.li.text }}>Index</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.th.bg, color: FINGER_COLORS.th.text }}>Thumbs</span>
+            <span className="font-semibold text-[var(--text-main)]">Touch Map:</span>
+            <div className="flex items-center gap-1 font-medium">
+              <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lp.bg, color: FINGER_COLORS.lp.text }}>Pinky</span>
+              <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lr.bg, color: FINGER_COLORS.lr.text }}>Ring</span>
+              <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.lm.bg, color: FINGER_COLORS.lm.text }}>Middle</span>
+              <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.li.bg, color: FINGER_COLORS.li.text }}>Index</span>
+              <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: FINGER_COLORS.th.bg, color: FINGER_COLORS.th.text }}>Thumbs</span>
             </div>
           </div>
+
           {currentKey && (
             <div className="flex items-center gap-2">
-              <span className="text-[var(--text-sub)]">Current:</span>
-              <span className="font-bold text-sm px-2 py-0.5 rounded bg-[var(--color-primary)] text-[var(--bg-main)]">
-                {currentKey === ' ' ? '␣ Space' : currentKey}
+              <span className="text-[var(--text-sub)] text-[11px] uppercase tracking-wider font-medium">Target:</span>
+              <span
+                className="font-bold text-xs px-2.5 py-1 rounded-md border flex items-center gap-1.5 shadow-xs"
+                style={{
+                  backgroundColor: currentAssignment.color + '22',
+                  borderColor: currentAssignment.color,
+                  color: currentAssignment.color
+                }}
+              >
+                <span>{currentKey === ' ' ? '␣ Space' : currentKey}</span>
+                <span className="text-[10px] opacity-80">({currentAssignment.fingerName})</span>
               </span>
+
+              {currentAssignment.needsShift && currentAssignment.shiftFingerName && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  + {currentAssignment.shiftFingerName}
+                </span>
+              )}
+
               {nextKey && (
                 <>
-                  <span className="text-[var(--text-sub)] ml-2">Next:</span>
-                  <span className="font-semibold text-xs px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-main)] border border-[var(--border-color)]">
+                  <span className="text-[var(--text-sub)] text-[11px] ml-1">Next:</span>
+                  <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-sub)] border border-[var(--border-color)]">
                     {nextKey === ' ' ? '␣' : nextKey}
                   </span>
                 </>
@@ -170,25 +178,42 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
                 (item.key === ' ' && normCurrent === ' ') ||
                 item.key.toLowerCase() === normCurrent;
 
+              const isMatchWrong =
+                normWrong &&
+                ((item.key === ' ' && normWrong === ' ') ||
+                  item.key.toLowerCase() === normWrong);
+
               const isMatchNext =
                 !isMatchCurrent &&
+                !isMatchWrong &&
                 ((item.key === ' ' && normNext === ' ') ||
                   item.key.toLowerCase() === normNext);
+
+              // Highlight Shift key if opposite shift is needed
+              const isShiftActive =
+                currentAssignment.needsShift &&
+                ((currentAssignment.shiftHand === 'right' && item.key === 'ShiftRight') ||
+                  (currentAssignment.shiftHand === 'left' && item.key === 'ShiftLeft'));
 
               const fingerStyle = showFingerGuides && FINGER_COLORS[item.finger];
               const heatBg = getHeatmapColor(item.key.toLowerCase());
 
-              // State-dependent classes
+              // State-dependent classes (NEVER fractional scale to prevent blurry text)
               let stateClasses = 'bg-[var(--key-bg)] text-[var(--key-text)] border border-[var(--border-color)] hover:border-[var(--text-sub)] keycap-3d';
 
-              if (isMatchCurrent) {
+              if (isMatchWrong) {
+                // Wrong key briefly alerted in rose/red
+                stateClasses = 'bg-rose-600 text-white shadow-lg shadow-rose-600/40 border-rose-400 animate-pulse keycap-3d-active';
+              } else if (isMatchCurrent) {
                 if (isError) {
-                  stateClasses = 'bg-[var(--color-error)] text-white scale-98 shadow-md shadow-[var(--color-error)]/40 border-transparent animate-pulse keycap-3d-active';
+                  stateClasses = 'bg-[var(--color-error)] text-white shadow-md shadow-[var(--color-error)]/40 border-transparent keycap-3d-active ring-2 ring-rose-400';
                 } else {
-                  stateClasses = 'bg-[var(--key-active)] text-white scale-98 shadow-md shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)] keycap-3d-active';
+                  stateClasses = 'bg-[var(--key-active)] text-white shadow-md shadow-[var(--color-primary)]/40 font-bold border-transparent ring-2 ring-[var(--color-primary)] keycap-3d-active';
                 }
+              } else if (isShiftActive) {
+                stateClasses = 'bg-amber-500/25 text-amber-300 border-amber-500/60 ring-2 ring-amber-400/50 animate-pulse keycap-3d';
               } else if (isMatchNext) {
-                stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/50 keycap-3d';
+                stateClasses = 'bg-[var(--bg-subtle)] text-[var(--text-main)] border-[var(--color-primary)]/60 ring-1 ring-[var(--color-primary)]/40 keycap-3d';
               }
 
               return (
@@ -203,18 +228,18 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
                     ${stateClasses}
                   `}
                 >
-                  {/* Key label */}
-                  <span>{item.display}</span>
+                  {/* Key label - crisp rendering */}
+                  <span className="font-semibold">{item.display}</span>
 
-                  {/* Tactile bumps for F and J */}
+                  {/* Tactile bumps for F and J anchors */}
                   {(item.key === 'f' || item.key === 'j') && (
-                    <span className="absolute bottom-1 w-2.5 h-0.5 bg-[var(--text-sub)] rounded-full opacity-60" />
+                    <span className="absolute bottom-1 w-2.5 h-0.5 bg-[var(--text-sub)] rounded-full opacity-70" />
                   )}
 
                   {/* Finger color dot indicator on key corner */}
-                  {showFingerGuides && fingerStyle && !isMatchCurrent && (
+                  {showFingerGuides && fingerStyle && !isMatchCurrent && !isMatchWrong && !isShiftActive && (
                     <span
-                      className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-70"
+                      className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full opacity-65"
                       style={{ backgroundColor: fingerStyle.text }}
                     />
                   )}

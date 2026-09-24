@@ -20,6 +20,7 @@ import { HandPlacementVisualizer } from './HandPlacementVisualizer';
 import { VirtualKeyboard } from '../typing/VirtualKeyboard';
 import { Button3D } from '../ui3d/Button3D';
 import { Card3D } from '../ui3d/Card3D';
+import { getFingerForKey } from '../../lib/fingerMapping';
 
 interface SubLessonPlayerProps {
   lesson: DetailedLesson;
@@ -388,13 +389,16 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
         </div>
         <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-[var(--text-sub)]">
           <span>Target Finger:</span>
-          <strong className="text-[var(--color-primary)]">{subLesson.targetFinger}</strong>
+          <strong className="text-[var(--color-primary)]">
+            {engine.activeChar ? getFingerForKey(engine.activeChar).description : subLesson.targetFinger}
+          </strong>
         </div>
       </div>
 
-      {/* Real Hand Placement & Finger Reach Visualizer */}
+      {/* Real Hand Placement & Finger Reach Visualizer (Single Canonical Source of Truth) */}
       <HandPlacementVisualizer
-        nextChar={engine.nextChar || engine.activeChar}
+        targetChar={engine.activeChar}
+        upcomingChar={engine.nextChar}
         currentChar={engine.currentInput ? engine.currentInput[engine.currentInput.length - 1] : ''}
         isError={engine.liveErrors > 0}
       />
@@ -404,7 +408,7 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
         <VirtualKeyboard
           currentKey={engine.activeChar}
           nextKey={engine.nextChar}
-          isError={false}
+          isError={engine.liveErrors > 0}
           showFingerGuides={true}
         />
       )}

@@ -30,7 +30,7 @@ export const AmbientEnvironment: React.FC = () => {
     return () => window.removeEventListener('mousemove', handlePointerMove);
   }, [settings.cursorGlow, isMobile, settings.animationIntensity]);
 
-  // Particle simulation loop
+  // Particle simulation loop with full High-DPI support
   useEffect(() => {
     if (
       settings.reducedMotion ||
@@ -46,13 +46,26 @@ export const AmbientEnvironment: React.FC = () => {
     if (!ctx) return;
 
     let animationId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    const setupCanvas = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    };
+
+    setupCanvas();
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      setupCanvas();
     };
     window.addEventListener('resize', handleResize);
 
@@ -146,36 +159,45 @@ export const AmbientEnvironment: React.FC = () => {
       animationId = requestAnimationFrame(render);
     };
 
-    animationId = requestAnimationFrame(render);
+    render();
 
     return () => {
-      cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
     };
   }, [currentTheme, settings.reducedMotion, settings.animationIntensity, settings.backgroundAtmosphere, isMobile]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* Dynamic Cyber Grid Overlay if enabled by theme */}
-      {currentTheme.atmosphere?.gridPattern && (
-        <div className="absolute inset-0 cyber-grid-overlay opacity-40" />
-      )}
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+      {/* 1. Theme-Specific Ambient Gradient Glow */}
+      <div
+        className="absolute inset-0 transition-opacity duration-700 opacity-30"
+        style={{
+          background: `radial-gradient(ellipse at 50% -20%, var(--theme-glow, rgba(56, 189, 248, 0.25)), transparent 70%)`
+        }}
+      />
 
-      {/* Ambient Spotlight following Cursor */}
+      {/* 2. Interactive Cursor Spotlight (Torch effect) */}
       {settings.cursorGlow && !isMobile && settings.animationIntensity !== 'off' && (
         <div
-          className="absolute inset-0 transition-opacity duration-300 opacity-30"
+          className="absolute -inset-96 transition-transform duration-75 ease-out opacity-25"
           style={{
-            background: `radial-gradient(650px circle at ${cursorPos.x}px ${cursorPos.y}px, var(--theme-glow, rgba(56, 189, 248, 0.15)), transparent 70%)`
+            transform: `translate(${cursorPos.x}px, ${cursorPos.y}px)`,
+            background: `radial-gradient(circle 350px at 0 0, var(--theme-glow, rgba(56, 189, 248, 0.35)), transparent 80%)`
           }}
         />
       )}
 
-      {/* Particle Atmosphere Canvas */}
+      {/* 3. Subtle Cyber Grid Overlay (Optional Theme Property) */}
+      {currentTheme.atmosphere?.gridPattern && (
+        <div className="absolute inset-0 cyber-grid-overlay opacity-40" />
+      )}
+
+      {/* 4. Canvas-based Particles / Atmosphere (High-DPI sharp rendering) */}
       {settings.backgroundAtmosphere !== 'none' && (
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full block opacity-70"
+          className="absolute inset-0 w-full h-full pointer-events-none"
         />
       )}
     </div>

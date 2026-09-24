@@ -12,7 +12,7 @@ export const Card3D: React.FC<Card3DProps> = ({
   children,
   glass = false,
   interactive = true,
-  maxTilt = 5,
+  maxTilt = 4, // Gentle clamped rotation to prevent text distortion
   glow = true,
   className = '',
   style,
@@ -46,8 +46,9 @@ export const Card3D: React.FC<Card3DProps> = ({
     const percentY = Math.max(0, Math.min(100, (y / rect.height) * 100));
     setMousePos({ x: percentX, y: percentY });
 
-    const tiltX = ((y / rect.height) - 0.5) * -maxTilt;
-    const tiltY = ((x / rect.width) - 0.5) * maxTilt;
+    // Smooth clamped rotation within ±4 degrees
+    const tiltX = Math.max(-maxTilt, Math.min(maxTilt, ((y / rect.height) - 0.5) * -maxTilt));
+    const tiltY = Math.max(-maxTilt, Math.min(maxTilt, ((x / rect.width) - 0.5) * maxTilt));
     setTilt({ x: tiltX, y: tiltY });
     setIsHovered(true);
 
@@ -60,8 +61,9 @@ export const Card3D: React.FC<Card3DProps> = ({
     onMouseLeave?.(e);
   }, [onMouseLeave]);
 
+  // Use pure translation & subtle rotation without fractional scale
   const tiltTransform = canTilt && isHovered
-    ? `perspective(1000px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateY(-4px)`
+    ? `perspective(1000px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateY(-3px)`
     : undefined;
 
   return (
@@ -73,21 +75,28 @@ export const Card3D: React.FC<Card3DProps> = ({
         transform: tiltTransform,
         ...style
       }}
-      className={`card-3d relative overflow-hidden ${glass ? 'card-3d-glass' : ''} ${className}`}
+      className={`card-3d relative overflow-hidden transition-all duration-200 ${glass ? 'card-3d-glass' : ''} ${className}`}
       {...props}
     >
-      {/* Specular Mouse Spotlight Highlight */}
+      {/* Specular Mouse Spotlight Highlight Layer */}
       {isHovered && glow && canTilt && (
         <div
           className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300 opacity-60"
           style={{
-            background: `radial-gradient(400px circle at ${mousePos.x}% ${mousePos.y}%, var(--theme-glow, rgba(56, 189, 248, 0.15)), transparent 70%)`
+            background: `radial-gradient(350px circle at ${mousePos.x}% ${mousePos.y}%, var(--theme-glow, rgba(56, 189, 248, 0.18)), transparent 70%)`
           }}
         />
       )}
 
-      {/* Card Content Surface */}
-      <div className="relative z-10 w-full h-full">
+      {/* Card Content Surface - Stabilized flat plane for razor-sharp typography */}
+      <div
+        className="relative z-10 w-full h-full"
+        style={{
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased'
+        }}
+      >
         {children}
       </div>
     </div>

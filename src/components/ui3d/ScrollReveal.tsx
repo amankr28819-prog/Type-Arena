@@ -43,34 +43,37 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     return () => observer.disconnect();
   }, [threshold, settings.reducedMotion, settings.animationIntensity]);
 
+  // Clean pure translation and opacity (zero filter blur or fractional scale artifacts)
   const animationStyles: Record<string, { hidden: string; visible: string }> = {
     fadeUp: {
       hidden: 'opacity-0 translate-y-6',
       visible: 'opacity-100 translate-y-0'
     },
     fadeScale: {
-      hidden: 'opacity-0 scale-95',
-      visible: 'opacity-100 scale-100'
+      hidden: 'opacity-0 translate-y-4',
+      visible: 'opacity-100 translate-y-0'
     },
     slideIn: {
       hidden: 'opacity-0 -translate-x-6',
       visible: 'opacity-100 translate-x-0'
     },
     depthSettle: {
-      hidden: 'opacity-0 translate-y-8 scale-90 blur-sm',
-      visible: 'opacity-100 translate-y-0 scale-100 blur-0'
+      hidden: 'opacity-0 translate-y-8',
+      visible: 'opacity-100 translate-y-0'
     }
   };
 
-  const anim = animationStyles[animation];
+  const anim = animationStyles[animation] || animationStyles.fadeUp;
 
   return (
     <div
       ref={elementRef}
       style={{
-        transitionDuration: '0.4s',
+        transitionDuration: '0.35s',
         transitionDelay: `${delayMs}ms`,
-        transitionTimingFunction: 'cubic-bezier(0.2, 0.9, 0.3, 1)'
+        transitionTimingFunction: 'cubic-bezier(0.2, 0.9, 0.3, 1)',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden'
       }}
       className={`transition-all ${isVisible ? anim.visible : anim.hidden} ${className}`}
     >
