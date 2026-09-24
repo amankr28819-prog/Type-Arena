@@ -183,57 +183,59 @@ export const StatsPage: React.FC = () => {
       </div>
 
       {/* Personal Bests Section */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg">
+      <div className="card-3d card-3d-glass p-6 sm:p-8 rounded-3xl border border-[var(--border-color)] shadow-xl relative overflow-hidden">
+        {/* Subtle Specular Top Highlight */}
+        <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--color-primary)]/40 to-transparent pointer-events-none" />
         <div className="flex items-center gap-2 mb-4">
           <Trophy className="w-5 h-5 text-amber-400" />
           <h2 className="text-xl font-bold text-[var(--text-main)]">Local Personal Records</h2>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center font-mono">
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">15s Time</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.time15 > 0 ? `${pbs.time15} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">30s Time</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.time30 > 0 ? `${pbs.time30} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">60s Time</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.time60 > 0 ? `${pbs.time60} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">120s Time</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.time120 > 0 ? `${pbs.time120} WPM` : '—'}
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">10 Words</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.words10 > 0 ? `${pbs.words10} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">25 Words</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.words25 > 0 ? `${pbs.words25} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">50 Words</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.words50 > 0 ? `${pbs.words50} WPM` : '—'}
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)]">
+          <div className="card-3d p-3.5 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--border-color)] shadow-xs">
             <span className="text-[11px] text-[var(--text-sub)] uppercase block mb-1">100 Words</span>
             <span className="text-2xl font-bold text-[var(--color-primary)]">
               {pbs.words100 > 0 ? `${pbs.words100} WPM` : '—'}
@@ -245,7 +247,7 @@ export const StatsPage: React.FC = () => {
       {/* Weak Keys & Bigram Matrix Analysis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Weak Keys List */}
-        <div className="p-6 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md">
+        <div className="card-3d p-6 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md">
           <h3 className="text-base font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">
             <AlertOctagon className="w-4 h-4 text-rose-400" />
             Weak Keys (Highest Error Rates)
@@ -288,7 +290,7 @@ export const StatsPage: React.FC = () => {
         </div>
 
         {/* Weak Bigrams List */}
-        <div className="p-6 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md">
+        <div className="card-3d p-6 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md">
           <h3 className="text-base font-bold text-[var(--text-main)] mb-1 flex items-center gap-2">
             <Zap className="w-4 h-4 text-indigo-400" />
             Slow Bigram Transitions

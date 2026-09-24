@@ -325,7 +325,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
                     mistakeKeys: slowBigrams.map((b) => b.bigram[0])
                   })
                 }
-                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group card-3d"
               >
                 <div>
                   <div className="p-2.5 w-fit rounded-xl bg-indigo-500/15 text-indigo-400 mb-3">
@@ -355,7 +355,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
                     numbers: false
                   })
                 }
-                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group card-3d"
               >
                 <div>
                   <div className="p-2.5 w-fit rounded-xl bg-emerald-500/15 text-emerald-400 mb-3">
@@ -381,7 +381,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
                     wordOption: 20
                   })
                 }
-                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group card-3d"
               >
                 <div>
                   <div className="p-2.5 w-fit rounded-xl bg-amber-500/15 text-amber-400 mb-3">
@@ -409,7 +409,7 @@ export const PracticePage: React.FC<PracticePageProps> = ({
                     punctuation: true
                   })
                 }
-                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group"
+                className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition-all cursor-pointer flex flex-col justify-between gap-4 group card-3d"
               >
                 <div>
                   <div className="p-2.5 w-fit rounded-xl bg-cyan-500/15 text-cyan-400 mb-3">

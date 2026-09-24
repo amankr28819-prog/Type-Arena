@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { TestResult, UserSettings } from '../../types';
 import { LiveWpmChart } from './LiveWpmChart';
+import { Button3D } from '../ui3d/Button3D';
 
 interface ResultModalProps {
   result: TestResult;
@@ -50,7 +51,9 @@ export const ResultModal: React.FC<ResultModalProps> = ({
   const overallPass = meetsMinWpm && meetsMinAccuracy;
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <div className="card-3d card-3d-glass w-full max-w-4xl mx-auto rounded-3xl border border-[var(--border-color)] p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* Subtle Specular Top Highlight */}
+      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--color-primary)]/40 to-transparent pointer-events-none" />
       {/* Header Banner: PB or Pass/Fail */}
       {isNewPB && (
         <div className="flex items-center justify-center gap-2 p-3 mb-6 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm tracking-wide">
@@ -233,34 +236,38 @@ export const ResultModal: React.FC<ResultModalProps> = ({
           </div>
 
           {(result.mistakes.length > 0 || result.mistypedWords.length > 0) && (
-            <button
+            <Button3D
+              variant="danger"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={() => onPracticeMistakes(result.mistakes, result.mistypedWords)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-error)]/15 hover:bg-[var(--color-error)]/25 text-[var(--color-error)] border border-[var(--color-error)]/30 font-semibold text-xs transition-colors"
+              className="w-full text-xs"
             >
-              <Sparkles className="w-3.5 h-3.5" />
               Practice My Mistakes (Generate Targeted Drill)
-            </button>
+            </Button3D>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* 3D Action Buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[var(--border-color)]">
-        <button
+        <Button3D
+          variant="secondary"
+          size="md"
+          icon={<RotateCcw className="w-4 h-4 text-[var(--text-sub)]" />}
           onClick={onRestart}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] font-medium text-sm transition-all"
         >
-          <RotateCcw className="w-4 h-4 text-[var(--text-sub)]" />
-          <span>Restart Test (Tab + Enter)</span>
-        </button>
+          Restart Test (Tab + Enter)
+        </Button3D>
 
-        <button
+        <Button3D
+          variant="primary"
+          size="md"
+          icon={<ArrowRight className="w-4 h-4" />}
           onClick={onNextTest}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-[var(--bg-main)] font-bold text-sm shadow-lg shadow-[var(--color-primary)]/20 transition-all"
         >
-          <span>Next Test</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+          Next Test
+        </Button3D>
       </div>
     </div>
   );

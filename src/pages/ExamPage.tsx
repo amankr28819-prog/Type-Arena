@@ -144,7 +144,9 @@ export const ExamPage: React.FC = () => {
         </div>
       ) : examResult ? (
         /* Exam Scorecard & Certificate Result */
-        <div className="p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl animate-in fade-in zoom-in-95">
+        <div className="card-3d card-3d-glass p-8 rounded-3xl border border-[var(--border-color)] shadow-2xl animate-in fade-in zoom-in-95 relative overflow-hidden">
+          {/* Top highlight */}
+          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--color-primary)]/40 to-transparent pointer-events-none" />
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-6 mb-6">
             <div className="flex items-center gap-3">
               <div
@@ -247,7 +249,9 @@ export const ExamPage: React.FC = () => {
         </div>
       ) : (
         /* Exam Configuration Form */
-        <div className="p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl">
+        <div className="card-3d card-3d-glass p-8 rounded-3xl border border-[var(--border-color)] shadow-xl relative overflow-hidden">
+          {/* Top highlight */}
+          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--color-primary)]/40 to-transparent pointer-events-none" />
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2.5 rounded-2xl bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
               <GraduationCap className="w-6 h-6" />

@@ -131,7 +131,18 @@ class StorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEY_SETTINGS);
       if (data) {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+        const parsed = JSON.parse(data);
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          uiDepth: parsed.uiDepth ?? DEFAULT_SETTINGS.uiDepth,
+          animationIntensity: parsed.animationIntensity ?? DEFAULT_SETTINGS.animationIntensity,
+          backgroundAtmosphere: parsed.backgroundAtmosphere ?? DEFAULT_SETTINGS.backgroundAtmosphere,
+          cardTilt: parsed.cardTilt ?? DEFAULT_SETTINGS.cardTilt,
+          glassmorphism: parsed.glassmorphism ?? DEFAULT_SETTINGS.glassmorphism,
+          cursorGlow: parsed.cursorGlow ?? DEFAULT_SETTINGS.cursorGlow,
+          themePreset: parsed.themePreset ?? DEFAULT_SETTINGS.themePreset,
+        };
       }
     } catch (e) {
       console.warn('Failed to parse settings, using defaults', e);

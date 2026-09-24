@@ -113,17 +113,17 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
 
   return (
     <div className="w-full flex flex-col items-center gap-3">
-      {/* Primary Config Bar */}
-      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-3 py-2 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md text-xs sm:text-sm">
-        {/* Modes */}
-        <div className="flex items-center gap-1 bg-[var(--bg-subtle)] p-1 rounded-xl">
+      {/* Primary 3D Config Bar */}
+      <div className="card-3d card-3d-glass flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2.5 rounded-2xl border border-[var(--border-color)] shadow-lg text-xs sm:text-sm">
+        {/* Modes with 3D Tactile Buttons */}
+        <div className="flex items-center gap-1 bg-[var(--bg-subtle)]/85 p-1 rounded-xl border border-[var(--border-color)]/60 shadow-inner">
           <button
             onClick={() => onModeChange('time')}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'time'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -133,10 +133,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
           <button
             onClick={() => onModeChange('words')}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'words'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -146,10 +146,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
           <button
             onClick={() => onModeChange('quote')}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'quote'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <Quote className="w-3.5 h-3.5" />
@@ -159,10 +159,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
           <button
             onClick={() => onModeChange('code')}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'code'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -172,10 +172,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
           <button
             onClick={() => onModeChange('zen')}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'zen'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <Feather className="w-3.5 h-3.5" />
@@ -185,10 +185,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
           <button
             onClick={() => setShowCustomTextModal(true)}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none ${
               mode === 'custom'
-                ? 'bg-[var(--color-primary)] text-[var(--bg-main)] font-semibold shadow-sm'
-                : 'text-[var(--text-sub)] hover:text-[var(--text-main)]'
+                ? 'btn-3d btn-3d-primary font-bold shadow-md'
+                : 'text-[var(--text-sub)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] active:scale-95 font-medium'
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -346,7 +346,7 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
         <button
           onClick={onRestart}
           title="Restart Test (or press Tab + Enter / Esc)"
-          className="p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] text-[var(--text-sub)] hover:text-[var(--text-main)] transition-colors"
+          className="btn-3d btn-3d-secondary p-2 rounded-xl text-[var(--text-sub)] hover:text-[var(--text-main)] shadow-xs cursor-pointer select-none"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
