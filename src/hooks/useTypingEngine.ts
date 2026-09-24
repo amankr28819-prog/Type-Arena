@@ -48,6 +48,7 @@ export function useTypingEngine({
   const [wordHistory, setWordHistory] = useState<string[]>([]);
 
   const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
   const [failReason, setFailReason] = useState('');
@@ -62,19 +63,23 @@ export function useTypingEngine({
     mode === 'time' ? targetDuration : null
   );
 
+  // Cumulative Canonical Keystroke and Error Tracking
+  const correctKeystrokesRef = useRef<number>(0);
+  const incorrectKeystrokesRef = useRef<number>(0);
+  const backspaceCountRef = useRef<number>(0);
+  const errorHistoryRef = useRef<{ expected: string; actual: string; index: number; timestamp: number }[]>([]);
+  const correctByKeyRef = useRef<Record<string, number>>({});
+  const errorsByKeyRef = useRef<Record<string, number>>({});
+
+  // Precision Timestamp Timer References
   const startTimeRef = useRef<number | null>(null);
+  const pausedTimeRef = useRef<number | null>(null);
+  const accumulatedPauseMsRef = useRef<number>(0);
   const lastKeyTimeRef = useRef<number | null>(null);
   const keystrokesRef = useRef<KeystrokeEvent[]>([]);
   const timelineRef = useRef<{ time: number; wpm: number; rawWpm: number; errors: number }[]>([]);
-  const backspaceCountRef = useRef(0);
   const timerIntervalRef = useRef<number | null>(null);
   const resultSavedRef = useRef(false);
-
-  // Sync text when initialText changes
-  useEffect(() => {
-    setText(initialText);
-    resetTest();
-  }, [initialText]);
 
   // Reset test state completely
   const resetTest = useCallback(() => {
@@ -83,6 +88,7 @@ export function useTypingEngine({
       timerIntervalRef.current = null;
     }
     setIsActive(false);
+    setIsPaused(false);
     setIsFinished(false);
     setIsFailed(false);
     setFailReason('');
@@ -94,61 +100,65 @@ export function useTypingEngine({
       ? (timeOption === 'custom' ? (customTime || 45) : (timeOption || 30))
       : null;
     setRemainingSeconds(dur);
+
+    // Reset precision metrics
     startTimeRef.current = null;
+    pausedTimeRef.current = null;
+    accumulatedPauseMsRef.current = 0;
     lastKeyTimeRef.current = null;
+    correctKeystrokesRef.current = 0;
+    incorrectKeystrokesRef.current = 0;
+    backspaceCountRef.current = 0;
+    errorHistoryRef.current = [];
+    correctByKeyRef.current = {};
+    errorsByKeyRef.current = {};
     keystrokesRef.current = [];
     timelineRef.current = [];
-    backspaceCountRef.current = 0;
     resultSavedRef.current = false;
   }, [mode, timeOption, customTime]);
 
-  // Compute live character statistics
-  const getCharacterStats = useCallback(() => {
-    let correct = 0;
-    let incorrect = 0;
-    let extra = 0;
-    let missed = 0;
+  // Sync text when initialText changes
+  useEffect(() => {
+    setText(initialText);
+    resetTest();
+  }, [initialText, resetTest]);
 
-    // Evaluate completed words
-    wordHistory.forEach((typed, idx) => {
-      const expected = words.current[idx] || '';
-      for (let i = 0; i < Math.max(typed.length, expected.length); i++) {
-        if (i < typed.length && i < expected.length) {
-          if (typed[i] === expected[i]) correct++;
-          else incorrect++;
-        } else if (i >= expected.length) {
-          extra++;
-        } else {
-          missed++;
-        }
-      }
-      // Count space
-      correct++;
-    });
-
-    // Evaluate active word in progress
-    const activeExpected = words.current[currentWordIndex] || '';
-    for (let i = 0; i < currentInput.length; i++) {
-      if (i < activeExpected.length) {
-        if (currentInput[i] === activeExpected[i]) correct++;
-        else incorrect++;
-      } else {
-        extra++;
-      }
+  // Pause and Resume session controls
+  const pauseTest = useCallback(() => {
+    if (!isActive || isFinished || isPaused) return;
+    setIsPaused(true);
+    pausedTimeRef.current = performance.now();
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
     }
+  }, [isActive, isFinished, isPaused]);
 
-    return { correct, incorrect, extra, missed };
-  }, [currentInput, currentWordIndex, wordHistory]);
+  const resumeTest = useCallback(() => {
+    if (!isPaused || isFinished) return;
+    if (pausedTimeRef.current !== null) {
+      accumulatedPauseMsRef.current += (performance.now() - pausedTimeRef.current);
+      pausedTimeRef.current = null;
+    }
+    setIsPaused(false);
+    lastKeyTimeRef.current = performance.now();
+  }, [isPaused, isFinished]);
 
-  const stats = getCharacterStats();
-  const currentTotalTyped = stats.correct + stats.incorrect + stats.extra;
+  // Live accurate metrics derived from canonical keystroke history
   const currentDurationForWpm = startTimeRef.current
-    ? Math.max(0.5, (performance.now() - startTimeRef.current) / 1000)
+    ? Math.max(0.5, (performance.now() - startTimeRef.current - accumulatedPauseMsRef.current) / 1000)
     : Math.max(1, elapsedSeconds);
-  const currentWpm = calculateWpm(stats.correct, currentDurationForWpm);
-  const currentRawWpm = calculateRawWpm(currentTotalTyped, currentDurationForWpm);
-  const currentAccuracy = calculateAccuracy(stats);
-  const currentErrors = stats.incorrect + stats.extra;
+
+  const currentWpm = calculateWpm(correctKeystrokesRef.current, currentDurationForWpm);
+  const currentRawWpm = calculateRawWpm(
+    correctKeystrokesRef.current + incorrectKeystrokesRef.current,
+    currentDurationForWpm
+  );
+  const currentAccuracy = calculateAccuracy(
+    correctKeystrokesRef.current,
+    incorrectKeystrokesRef.current
+  );
+  const currentErrors = incorrectKeystrokesRef.current;
 
   // Finalize test and compute full result
   const finishTest = useCallback((finalDurationOverride?: number) => {
@@ -161,13 +171,14 @@ export function useTypingEngine({
     }
 
     setIsActive(false);
+    setIsPaused(false);
     setIsFinished(true);
 
     let actualDuration: number;
     if (finalDurationOverride !== undefined) {
       actualDuration = finalDurationOverride;
     } else if (startTimeRef.current) {
-      const raw = (performance.now() - startTimeRef.current) / 1000;
+      const raw = (performance.now() - startTimeRef.current - accumulatedPauseMsRef.current) / 1000;
       if (mode === 'time' && targetDuration > 0) {
         actualDuration = Math.min(targetDuration, Math.max(1, Math.round(raw)));
       } else {
@@ -182,22 +193,22 @@ export function useTypingEngine({
       setRemainingSeconds(0);
     }
 
-    const finalStats = getCharacterStats();
-    const finalWpm = calculateWpm(finalStats.correct, actualDuration);
-    const finalRaw = calculateRawWpm(
-      finalStats.correct + finalStats.incorrect + finalStats.extra,
-      actualDuration
-    );
-    const finalNet = calculateNetWpm(finalRaw, finalStats.incorrect + finalStats.extra, actualDuration);
-    const finalAccuracy = calculateAccuracy(finalStats);
+    const finalCorrect = correctKeystrokesRef.current;
+    const finalIncorrect = incorrectKeystrokesRef.current;
+    const finalTotalAttempted = finalCorrect + finalIncorrect;
+
+    const finalWpm = calculateWpm(finalCorrect, actualDuration);
+    const finalRaw = calculateRawWpm(finalTotalAttempted, actualDuration);
+    const finalNet = calculateNetWpm(finalRaw, finalIncorrect, actualDuration);
+    const finalAccuracy = calculateAccuracy(finalCorrect, finalIncorrect);
     const finalConsistency = calculateConsistency(keystrokesRef.current);
 
-    // Identify unique mistyped keys
+    // Identify unique mistyped keys from canonical error history
     const mistakeKeys = Array.from(
       new Set(
-        keystrokesRef.current
-          .filter((k) => !k.isCorrect)
-          .map((k) => k.expected.toLowerCase())
+        errorHistoryRef.current
+          .map((e) => e.expected.toLowerCase())
+          .filter((k) => k && k !== ' ')
       )
     );
 
@@ -209,6 +220,13 @@ export function useTypingEngine({
     });
 
     const finalBurst = calculateBurstSpeed(keystrokesRef.current);
+
+    const characterStats = {
+      correct: finalCorrect,
+      incorrect: finalIncorrect,
+      extra: 0,
+      missed: 0
+    };
 
     const result: TestResult = {
       id: `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -222,19 +240,18 @@ export function useTypingEngine({
       burstWpm: finalBurst,
       accuracy: finalAccuracy,
       consistency: finalConsistency,
-      characterStats: finalStats,
+      characterStats,
       backspaceCount: backspaceCountRef.current,
       mistakes: mistakeKeys,
       mistypedWords,
       keystrokes: keystrokesRef.current,
       timeline: timelineRef.current.length > 0 ? timelineRef.current : [
-        { time: actualDuration, wpm: finalWpm, rawWpm: finalRaw, errors: finalStats.incorrect }
+        { time: actualDuration, wpm: finalWpm, rawWpm: finalRaw, errors: finalIncorrect }
       ],
       difficulty: settings.difficulty,
       language: settings.language
     };
 
-    // Save to storage
     storage.saveTestResult(result);
     soundEngine.playSuccessChime();
 
@@ -243,7 +260,6 @@ export function useTypingEngine({
     }
   }, [
     elapsedSeconds,
-    getCharacterStats,
     mode,
     targetDuration,
     currentWordIndex,
@@ -254,16 +270,16 @@ export function useTypingEngine({
     onTestComplete
   ]);
 
-  // Interval timer for live updates with timestamp drift compensation and tab-switch safety
+  // Interval timer for live updates with timestamp drift compensation and boundary protection
   useEffect(() => {
-    if (!isActive || isFinished) return;
+    if (!isActive || isFinished || isPaused) return;
 
     let lastRecordedSec = 0;
 
     const handleVisibilityChange = () => {
       if (document.hidden) return;
-      if (!startTimeRef.current || !isActive || isFinished) return;
-      const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+      if (!startTimeRef.current || !isActive || isFinished || isPaused) return;
+      const exactElapsed = (performance.now() - startTimeRef.current - accumulatedPauseMsRef.current) / 1000;
       if (mode === 'time' && targetDuration > 0 && exactElapsed >= targetDuration) {
         finishTest(targetDuration);
       }
@@ -272,8 +288,8 @@ export function useTypingEngine({
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     timerIntervalRef.current = window.setInterval(() => {
-      if (!startTimeRef.current) return;
-      const exactElapsed = (performance.now() - startTimeRef.current) / 1000;
+      if (!startTimeRef.current || isPaused) return;
+      const exactElapsed = (performance.now() - startTimeRef.current - accumulatedPauseMsRef.current) / 1000;
       const wholeElapsed = Math.floor(exactElapsed);
 
       setElapsedSeconds(wholeElapsed);
@@ -281,27 +297,27 @@ export function useTypingEngine({
       // Record live sample in timeline once per whole second
       if (wholeElapsed > lastRecordedSec) {
         lastRecordedSec = wholeElapsed;
-        const currentStats = getCharacterStats();
-        const liveW = calculateWpm(currentStats.correct, Math.max(1, wholeElapsed));
+        const liveW = calculateWpm(correctKeystrokesRef.current, Math.max(1, wholeElapsed));
         const liveRaw = calculateRawWpm(
-          currentStats.correct + currentStats.incorrect + currentStats.extra,
+          correctKeystrokesRef.current + incorrectKeystrokesRef.current,
           Math.max(1, wholeElapsed)
         );
         timelineRef.current.push({
           time: wholeElapsed,
           wpm: liveW,
           rawWpm: liveRaw,
-          errors: currentStats.incorrect + currentStats.extra
+          errors: incorrectKeystrokesRef.current
         });
       }
 
-      // Time Mode countdown rule: automatically ends at target duration
+      // Time Mode countdown rule: automatically ends at strict boundary
       if (mode === 'time' && targetDuration > 0) {
-        const rem = Math.max(0, targetDuration - exactElapsed);
-        setRemainingSeconds(Math.ceil(rem));
         if (exactElapsed >= targetDuration) {
           finishTest(targetDuration);
+          return;
         }
+        const rem = Math.max(0, targetDuration - exactElapsed);
+        setRemainingSeconds(Math.ceil(rem));
       }
     }, 50);
 
@@ -312,12 +328,12 @@ export function useTypingEngine({
         timerIntervalRef.current = null;
       }
     };
-  }, [isActive, isFinished, mode, targetDuration, finishTest, getCharacterStats]);
+  }, [isActive, isFinished, isPaused, mode, targetDuration, finishTest]);
 
   // Keydown processor
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent | KeyboardEvent) => {
-      if (isFinished || isFailed) return;
+      if (isFinished || isFailed || isPaused) return;
 
       const key = e.key;
 
@@ -330,7 +346,7 @@ export function useTypingEngine({
         key === 'Meta' ||
         key === 'CapsLock' ||
         key === 'Escape' ||
-        key.startsWith('F') && key.length > 1
+        (key.startsWith('F') && key.length > 1)
       ) {
         return;
       }
@@ -339,10 +355,11 @@ export function useTypingEngine({
       const latency = lastKeyTimeRef.current ? Math.round(now - lastKeyTimeRef.current) : 0;
       lastKeyTimeRef.current = now;
 
-      // Start timer on first keystroke using performance.now()
+      // Start timer on first typing keystroke using performance.now()
       if (!isActive) {
         setIsActive(true);
         startTimeRef.current = performance.now();
+        accumulatedPauseMsRef.current = 0;
       }
 
       const activeWord = words.current[currentWordIndex] || '';
@@ -351,18 +368,18 @@ export function useTypingEngine({
       if (key === 'Backspace') {
         e.preventDefault();
 
-        // Check if backspace is completely disabled by user setting
         if (settings.disableBackspace) {
           return;
         }
 
+        // Backspace tracks separately; NEVER removes past error from incorrectKeystrokesRef!
         backspaceCountRef.current += 1;
 
         if (currentInput.length > 0) {
           setCurrentInput((prev) => prev.slice(0, -1));
         } else if (
           currentWordIndex > 0 &&
-          settings.difficulty === 'normal' // Advanced+ does not allow going back to previous words
+          (settings.difficulty === 'easy' || settings.difficulty === 'normal')
         ) {
           // Move back to previous word
           const prevWord = wordHistory[currentWordIndex - 1] || '';
@@ -389,7 +406,35 @@ export function useTypingEngine({
           return;
         }
 
-        soundEngine.playKeystroke(settings.soundProfile);
+        const isMatch = currentInput === activeWord;
+
+        if (isMatch) {
+          correctKeystrokesRef.current += 1;
+          correctByKeyRef.current[' '] = (correctByKeyRef.current[' '] || 0) + 1;
+          soundEngine.playKeystroke(settings.soundProfile);
+        } else {
+          incorrectKeystrokesRef.current += 1;
+          errorsByKeyRef.current[' '] = (errorsByKeyRef.current[' '] || 0) + 1;
+          errorHistoryRef.current.push({
+            expected: ' ',
+            actual: ' ',
+            index: currentWordIndex,
+            timestamp: now
+          });
+          if (settings.playErrorSound) {
+            soundEngine.playErrorSound();
+          } else {
+            soundEngine.playKeystroke(settings.soundProfile);
+          }
+        }
+
+        keystrokesRef.current.push({
+          key: ' ',
+          expected: ' ',
+          timestamp: now,
+          isCorrect: isMatch,
+          latencyMs: latency
+        });
 
         const nextHistory = [...wordHistory, currentInput];
         setWordHistory(nextHistory);
@@ -420,7 +465,19 @@ export function useTypingEngine({
         // Sound feedback
         if (isCorrect) {
           soundEngine.playKeystroke(settings.soundProfile);
+          correctKeystrokesRef.current += 1;
+          correctByKeyRef.current[expectedChar] = (correctByKeyRef.current[expectedChar] || 0) + 1;
         } else {
+          incorrectKeystrokesRef.current += 1;
+          const errorKey = expectedChar || 'extra';
+          errorsByKeyRef.current[errorKey] = (errorsByKeyRef.current[errorKey] || 0) + 1;
+          errorHistoryRef.current.push({
+            expected: expectedChar,
+            actual: key,
+            index: charIndex,
+            timestamp: now
+          });
+
           if (settings.playErrorSound) {
             soundEngine.playErrorSound();
           } else {
@@ -441,11 +498,10 @@ export function useTypingEngine({
           (settings.stopOnError || settings.difficulty === 'expert') &&
           !isCorrect
         ) {
-          // Record the failed attempt keystroke
           keystrokesRef.current.push({
             key,
             expected: expectedChar,
-            timestamp: Date.now(),
+            timestamp: now,
             isCorrect: false,
             latencyMs: latency
           });
@@ -456,7 +512,7 @@ export function useTypingEngine({
         keystrokesRef.current.push({
           key,
           expected: expectedChar || 'extra',
-          timestamp: Date.now(),
+          timestamp: now,
           isCorrect,
           latencyMs: latency
         });
@@ -477,6 +533,7 @@ export function useTypingEngine({
     [
       isFinished,
       isFailed,
+      isPaused,
       isActive,
       currentWordIndex,
       currentInput,
@@ -496,6 +553,7 @@ export function useTypingEngine({
     currentInput,
     wordHistory,
     isActive,
+    isPaused,
     isFinished,
     isFailed,
     failReason,
@@ -509,6 +567,8 @@ export function useTypingEngine({
     timeline: timelineRef.current,
     handleKeyDown,
     resetTest,
-    finishTest
+    finishTest,
+    pauseTest,
+    resumeTest
   };
 }

@@ -340,15 +340,15 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
                   className={`relative inline-flex items-center transition-opacity ${
                     isPast
                       ? typedWord === word
-                        ? 'opacity-60'
-                        : 'opacity-80'
+                        ? 'opacity-70'
+                        : 'opacity-85'
                       : isCurrent
                       ? 'opacity-100 font-bold'
-                      : 'opacity-40'
+                      : 'opacity-85 text-[var(--typing-target)]'
                   }`}
                 >
                   {word.split('').map((char, cIdx) => {
-                    let charClass = 'text-[var(--text-sub)]';
+                    let charClass = 'text-[var(--typing-target)]';
 
                     if (isPast) {
                       charClass = typedWord[cIdx] === char ? 'text-[var(--color-correct)]' : 'text-[var(--color-error)] underline';

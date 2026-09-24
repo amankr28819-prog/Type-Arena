@@ -52,6 +52,9 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
   const keystrokesRef = useRef<{ key: string; expected: string; timestamp: number; isCorrect: boolean; latencyMs: number }[]>([]);
   const lastKeyTimeRef = useRef<number | null>(null);
   const backspaceCountRef = useRef(0);
+  const correctKeystrokesRef = useRef(0);
+  const incorrectKeystrokesRef = useRef(0);
+  const errorHistoryRef = useRef<{ expected: string; actual: string; index: number; timestamp: number }[]>([]);
 
   // Per-Key tracking map
   const perKeyMapRef = useRef<Record<string, { correct: number; incorrect: number }>>({});
@@ -81,6 +84,9 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
     keystrokesRef.current = [];
     lastKeyTimeRef.current = null;
     backspaceCountRef.current = 0;
+    correctKeystrokesRef.current = 0;
+    incorrectKeystrokesRef.current = 0;
+    errorHistoryRef.current = [];
     perKeyMapRef.current = {};
     resultSavedRef.current = false;
   }, [targetDuration]);
@@ -120,15 +126,14 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
     return { correct, incorrect, extra, missed };
   }, [currentInput, currentWordIndex, wordHistory]);
 
-  const stats = getCharacterStats();
   const currentDuration = startTimeRef.current
     ? Math.max(0.5, (performance.now() - startTimeRef.current - accumulatedPauseMsRef.current) / 1000)
     : Math.max(1, elapsedSeconds);
 
-  const liveWpm = calculateWpm(stats.correct, currentDuration);
-  const liveRawWpm = calculateRawWpm(stats.correct + stats.incorrect + stats.extra, currentDuration);
-  const liveAccuracy = calculateAccuracy(stats);
-  const liveErrors = stats.incorrect + stats.extra;
+  const liveWpm = calculateWpm(correctKeystrokesRef.current, currentDuration);
+  const liveRawWpm = calculateRawWpm(correctKeystrokesRef.current + incorrectKeystrokesRef.current, currentDuration);
+  const liveAccuracy = calculateAccuracy(correctKeystrokesRef.current, incorrectKeystrokesRef.current);
+  const liveErrors = incorrectKeystrokesRef.current;
 
   // Active expected character and next expected character
   const currentExpectedWord = wordsRef.current[currentWordIndex] || '';
@@ -175,8 +180,8 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
     setRemainingSeconds(0);
 
     const finalStats = getCharacterStats();
-    const finalWpm = calculateWpm(finalStats.correct, finalDuration);
-    const finalAccuracy = calculateAccuracy(finalStats);
+    const finalWpm = calculateWpm(correctKeystrokesRef.current, finalDuration);
+    const finalAccuracy = calculateAccuracy(correctKeystrokesRef.current, incorrectKeystrokesRef.current);
     const finalConsistency = calculateConsistency(keystrokesRef.current);
 
     const passed =
@@ -349,9 +354,12 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
         perKeyMapRef.current[' '] = { correct: 0, incorrect: 0 };
       }
       if (isSpaceExpected) {
+        correctKeystrokesRef.current++;
         perKeyMapRef.current[' '].correct++;
       } else {
+        incorrectKeystrokesRef.current++;
         perKeyMapRef.current[' '].incorrect++;
+        errorHistoryRef.current.push({ expected: ' ', actual: ' ', index: currentWordIndex, timestamp: now });
       }
 
       keystrokesRef.current.push({
@@ -390,10 +398,13 @@ export function useLearnEngine({ subLesson, settings, onComplete }: UseLearnEngi
       perKeyMapRef.current[keyKey] = { correct: 0, incorrect: 0 };
     }
     if (isCharCorrect) {
+      correctKeystrokesRef.current++;
       perKeyMapRef.current[keyKey].correct++;
       soundEngine.playKeystroke(settings.soundProfile);
     } else {
+      incorrectKeystrokesRef.current++;
       perKeyMapRef.current[keyKey].incorrect++;
+      errorHistoryRef.current.push({ expected: expectedChar, actual: charTyped, index: currentInput.length, timestamp: now });
       soundEngine.playErrorSound();
     }
 

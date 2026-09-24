@@ -2180,18 +2180,84 @@ export const BUILTIN_THEMES: ThemeConfig[] = [
   }
 ];
 
+function parseRgb(color: string): [number, number, number] {
+  if (!color) return [128, 128, 128];
+  const trimmed = color.trim();
+  if (trimmed.startsWith('#')) {
+    let hex = trimmed.slice(1);
+    if (hex.length === 3) {
+      hex = hex.split('').map((x) => x + x).join('');
+    }
+    const num = parseInt(hex.slice(0, 6), 16);
+    if (!isNaN(num)) {
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+  } else if (trimmed.startsWith('rgb')) {
+    const match = trimmed.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (match) {
+      return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+    }
+  }
+  return [128, 128, 128];
+}
+
+function getLuminance(rgb: [number, number, number]): number {
+  const [r, g, b] = rgb.map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function getContrastRatio(c1: string, c2: string): number {
+  const l1 = getLuminance(parseRgb(c1));
+  const l2 = getLuminance(parseRgb(c2));
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+export function ensureReadableContrast(foreground: string, background: string, minRatio = 4.5): string {
+  const ratio = getContrastRatio(foreground, background);
+  if (ratio >= minRatio) return foreground;
+
+  const bgLum = getLuminance(parseRgb(background));
+  const targetRgb: [number, number, number] = bgLum < 0.5 ? [255, 255, 255] : [0, 0, 0];
+  const fgRgb = parseRgb(foreground);
+
+  // Incrementally blend towards target until threshold is satisfied
+  for (let step = 0.15; step <= 1.0; step += 0.15) {
+    const blended: [number, number, number] = [
+      Math.round(fgRgb[0] * (1 - step) + targetRgb[0] * step),
+      Math.round(fgRgb[1] * (1 - step) + targetRgb[1] * step),
+      Math.round(fgRgb[2] * (1 - step) + targetRgb[2] * step)
+    ];
+    const blendedHex = `#${blended.map((x) => x.toString(16).padStart(2, '0')).join('')}`;
+    if (getContrastRatio(blendedHex, background) >= minRatio) {
+      return blendedHex;
+    }
+  }
+
+  return bgLum < 0.5 ? '#ffffff' : '#000000';
+}
+
 export function applyTheme(theme: ThemeConfig) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const c = theme.colors;
+
+  // Guarantee readability of secondary & typing target text against background
+  const verifiedTextSub = ensureReadableContrast(c.textSub, c.bgSurface, 4.5);
+  const verifiedTextMuted = ensureReadableContrast(c.textMuted, c.bgSurface, 3.2);
+  const typingTarget = ensureReadableContrast(c.textSub, c.bgSurface, 4.5);
 
   root.style.setProperty('--bg-main', c.bgMain);
   root.style.setProperty('--bg-surface', c.bgSurface);
   root.style.setProperty('--bg-subtle', c.bgSubtle);
   root.style.setProperty('--border-color', c.borderColor);
   root.style.setProperty('--text-main', c.textMain);
-  root.style.setProperty('--text-sub', c.textSub);
-  root.style.setProperty('--text-muted', c.textMuted);
+  root.style.setProperty('--text-sub', verifiedTextSub);
+  root.style.setProperty('--text-muted', verifiedTextMuted);
   root.style.setProperty('--color-primary', c.colorPrimary);
   root.style.setProperty('--color-correct', c.colorCorrect);
   root.style.setProperty('--color-error', c.colorError);
@@ -2200,6 +2266,25 @@ export function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--key-bg', c.keyBg);
   root.style.setProperty('--key-text', c.keyText);
   root.style.setProperty('--key-active', c.keyActive);
+
+  // Semantic Design System Tokens (Requirement 30)
+  root.style.setProperty('--text-primary', c.textMain);
+  root.style.setProperty('--text-secondary', verifiedTextSub);
+  root.style.setProperty('--typing-target', typingTarget);
+  root.style.setProperty('--typing-correct', c.colorCorrect);
+  root.style.setProperty('--typing-error', c.colorError);
+  root.style.setProperty('--typing-error-bg', c.colorErrorBg);
+  root.style.setProperty('--typing-current', c.textMain);
+  root.style.setProperty('--caret', c.colorCaret);
+  root.style.setProperty('--surface', c.bgSurface);
+  root.style.setProperty('--surface-raised', c.bgSubtle);
+  root.style.setProperty('--border', c.borderColor);
+  root.style.setProperty('--accent', c.colorPrimary);
+  const accentLum = getLuminance(parseRgb(c.colorPrimary));
+  root.style.setProperty('--accent-contrast', accentLum > 0.45 ? '#090d16' : '#ffffff');
+  root.style.setProperty('--success', '#10b981');
+  root.style.setProperty('--warning', '#f59e0b');
+  root.style.setProperty('--error', '#ef4444');
 
   // 3D Atmosphere Tokens
   const glow = theme.atmosphere?.glow || `${c.colorPrimary}33`;

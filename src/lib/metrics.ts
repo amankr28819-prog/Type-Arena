@@ -28,10 +28,21 @@ export function calculateNetWpm(rawWpm: number, uncorrectedErrors: number, timeS
   return Math.max(0, Math.round(rawWpm - errorPenalty));
 }
 
-export function calculateAccuracy(stats: CharacterStats): number {
-  const total = stats.correct + stats.incorrect + stats.extra;
+export function calculateAccuracy(
+  correctOrStats: number | CharacterStats,
+  incorrectParam?: number
+): number {
+  if (typeof correctOrStats === 'object' && correctOrStats !== null) {
+    const total = correctOrStats.correct + correctOrStats.incorrect + correctOrStats.extra;
+    if (total <= 0) return 100;
+    const acc = (correctOrStats.correct / total) * 100;
+    return Math.min(100, Math.max(0, parseFloat(acc.toFixed(1))));
+  }
+  const correct = typeof correctOrStats === 'number' ? correctOrStats : 0;
+  const incorrect = typeof incorrectParam === 'number' ? incorrectParam : 0;
+  const total = correct + incorrect;
   if (total <= 0) return 100;
-  const acc = (stats.correct / total) * 100;
+  const acc = (correct / total) * 100;
   return Math.min(100, Math.max(0, parseFloat(acc.toFixed(1))));
 }
 

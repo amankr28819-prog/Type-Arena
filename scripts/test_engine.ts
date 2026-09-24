@@ -256,6 +256,124 @@ const adaptiveText = generateAdaptivePracticeText(['d', 'k'], ['dk', 'kd']);
 assert(adaptiveText.length > 20, `Adaptive practice text generated successfully (${adaptiveText.length} chars)`);
 assert(adaptiveText.includes('d') || adaptiveText.includes('k'), 'Adaptive practice text targets weak keys');
 
+// 10. Canonical Typing Session Tests (Prompt Test Cases 1 - 10)
+import {
+  createTypingSession,
+  processKeystroke,
+  updateSessionTimer,
+  pauseSession,
+  resumeSession,
+  formatTimerDisplay
+} from '../src/lib/typingSession';
+import { getContrastRatio, ensureReadableContrast } from '../src/lib/themes';
+
+// TEST CASE 1: Target "abc", User types "abc" -> Accuracy 100%
+const s1 = createTypingSession({ targetText: 'abc', mode: 'words' });
+processKeystroke(s1, 'a');
+processKeystroke(s1, 'b');
+processKeystroke(s1, 'c');
+assert(s1.accuracy === 100, `TEST CASE 1: abc -> abc accuracy = 100% (got ${s1.accuracy}%)`);
+assert(s1.correctKeystrokes === 3 && s1.incorrectKeystrokes === 0, `TEST CASE 1 keystrokes: 3 correct, 0 incorrect`);
+
+// TEST CASE 2: Target "abc", User types "axc" -> 2 correct, 1 incorrect, Accuracy 66.67%
+const s2 = createTypingSession({ targetText: 'abc', mode: 'words' });
+processKeystroke(s2, 'a');
+processKeystroke(s2, 'x'); // wrong
+processKeystroke(s2, 'c');
+assert(s2.correctKeystrokes === 2, `TEST CASE 2: 2 correct keystrokes (got ${s2.correctKeystrokes})`);
+assert(s2.incorrectKeystrokes === 1, `TEST CASE 2: 1 incorrect keystroke (got ${s2.incorrectKeystrokes})`);
+assert(s2.accuracy === 66.67, `TEST CASE 2: axc -> accuracy = 66.67% (got ${s2.accuracy}%)`);
+
+// TEST CASE 3: Target "abc", User types "ax" + Backspace + "b" + "c" -> 3 correct, 1 incorrect, Accuracy 75%
+const s3 = createTypingSession({ targetText: 'abc', mode: 'words' });
+processKeystroke(s3, 'a');
+processKeystroke(s3, 'x'); // wrong
+assert(s3.incorrectKeystrokes === 1, 'Mistake x recorded in incorrectKeystrokes');
+processKeystroke(s3, 'Backspace');
+assert(s3.backspaces === 1, 'Backspace count incremented');
+assert(s3.incorrectKeystrokes === 1, 'CRITICAL: Backspace DID NOT erase mistake from incorrectKeystrokes');
+processKeystroke(s3, 'b');
+processKeystroke(s3, 'c');
+assert(s3.correctKeystrokes === 3, `TEST CASE 3: 3 correct keystrokes (got ${s3.correctKeystrokes})`);
+assert(s3.incorrectKeystrokes === 1, `TEST CASE 3: 1 incorrect keystroke (got ${s3.incorrectKeystrokes})`);
+assert(s3.accuracy === 75, `TEST CASE 3: ax + Backspace + bc -> accuracy = 75% (got ${s3.accuracy}%)`);
+
+// TEST CASE 4: Target "abc", User types "x" + Backspace + "a" + "b" + "c" -> 3 correct, 1 incorrect, Accuracy 75%
+const s4 = createTypingSession({ targetText: 'abc', mode: 'words' });
+processKeystroke(s4, 'x'); // wrong
+processKeystroke(s4, 'Backspace');
+processKeystroke(s4, 'a');
+processKeystroke(s4, 'b');
+processKeystroke(s4, 'c');
+assert(s4.correctKeystrokes === 3, `TEST CASE 4: 3 correct keystrokes (got ${s4.correctKeystrokes})`);
+assert(s4.incorrectKeystrokes === 1, `TEST CASE 4: 1 incorrect keystroke (got ${s4.incorrectKeystrokes})`);
+assert(s4.accuracy === 75, `TEST CASE 4: x + Backspace + abc -> accuracy = 75% (got ${s4.accuracy}%)`);
+
+// TEST CASE 5: Backspace without error
+const s5 = createTypingSession({ targetText: 'abc', mode: 'words' });
+processKeystroke(s5, 'a');
+processKeystroke(s5, 'Backspace');
+assert(s5.backspaces === 1, 'Backspace count incremented to 1');
+assert(s5.incorrectKeystrokes === 0, 'TEST CASE 5: Backspace without mistake does NOT create an error');
+assert(s5.accuracy === 100, `TEST CASE 5 accuracy remains 100% (got ${s5.accuracy}%)`);
+
+// TEST CASE 6 — TIMER: 10 second test terminates strictly at 10s boundary
+const s6 = createTypingSession({ targetText: 'the quick brown fox jumps over the lazy dog', mode: 'time', duration: 10 });
+assert(s6.status === 'idle', 'Timer does not start when idle');
+processKeystroke(s6, 't', 1000);
+assert(s6.status === 'running', 'Timer starts upon first valid typing keystroke');
+updateSessionTimer(s6, 6000); // 5s elapsed
+assert(s6.remainingMs === 5000, `Remaining at 5s is 5000ms (got ${s6.remainingMs}ms)`);
+const expired = updateSessionTimer(s6, 11000); // 10s elapsed
+assert(expired === true, 'updateSessionTimer returns true when time expired');
+assert(s6.status === 'expired', `Test status is 'expired' on 10s boundary (got ${s6.status})`);
+assert(s6.elapsedMs === 10000, `Elapsed time clamped strictly to duration (got ${s6.elapsedMs}ms)`);
+assert(s6.remainingMs === 0, 'Remaining time is 0 at boundary');
+const rejectedKey = processKeystroke(s6, 'h', 11500);
+assert(rejectedKey.accepted === false, 'No further typing accepted after session expires');
+
+// TEST CASE 6B — Timer Display Formatting
+assert(formatTimerDisplay(15) === '00:15', `formatTimerDisplay(15) === '00:15' (got ${formatTimerDisplay(15)})`);
+assert(formatTimerDisplay(65) === '01:05', `formatTimerDisplay(65) === '01:05' (got ${formatTimerDisplay(65)})`);
+assert(formatTimerDisplay(0) === '00:00', `formatTimerDisplay(0) === '00:00'`);
+assert(formatTimerDisplay(-5) === '00:00', `formatTimerDisplay negative clamp === '00:00'`);
+
+// TEST CASE 7 — Pause & Resume
+const s7 = createTypingSession({ targetText: 'quick test text', mode: 'time', duration: 30 });
+processKeystroke(s7, 'q', 1000);
+updateSessionTimer(s7, 3000); // 2s elapsed
+assert(s7.elapsedMs === 2000, `Elapsed before pause: 2000ms (got ${s7.elapsedMs})`);
+pauseSession(s7, 3000);
+assert(s7.status === 'paused', 'Session status is paused');
+resumeSession(s7, 8000); // paused for 5s
+assert(s7.status === 'running', 'Session status resumed to running');
+updateSessionTimer(s7, 9000); // 1s after resume
+assert(s7.elapsedMs === 3000, `Paused time is excluded from elapsedMs (got ${s7.elapsedMs}ms, expected 3000ms)`);
+
+// TEST CASE 8 — DIFFICULTY CONTENT DIFFERENTIATION
+const easyContent = generateTestText({ mode: 'words', wordOption: 20, difficulty: 'easy' });
+const expertContent = generateTestText({ mode: 'words', wordOption: 20, difficulty: 'expert' });
+const masterContent = generateTestText({ mode: 'words', wordOption: 20, difficulty: 'master' });
+
+const easyWords = easyContent.split(' ');
+const expertWords = expertContent.split(' ');
+const masterWords = masterContent.split(' ');
+
+const easyAvgLen = easyWords.reduce((s, w) => s + w.length, 0) / easyWords.length;
+const expertAvgLen = expertWords.reduce((s, w) => s + w.length, 0) / expertWords.length;
+const masterAvgLen = masterWords.reduce((s, w) => s + w.length, 0) / masterWords.length;
+
+assert(easyAvgLen < 5.0, `Easy words average length is short (< 5.0, got ${easyAvgLen.toFixed(1)})`);
+assert(expertAvgLen > 7.0, `Expert words average length is long (> 7.0, got ${expertAvgLen.toFixed(1)})`);
+assert(masterAvgLen > 10.0, `Master words average length is very complex (> 10.0, got ${masterAvgLen.toFixed(1)})`);
+assert(easyContent !== expertContent, 'Easy and Expert content are genuinely different');
+
+// TEST CASE 9 — THEME CONTRAST VALIDATION
+for (const theme of BUILTIN_THEMES) {
+  const contrastSub = getContrastRatio(ensureReadableContrast(theme.colors.textSub, theme.colors.bgSurface, 4.5), theme.colors.bgSurface);
+  assert(contrastSub >= 4.5, `Theme ${theme.name} textSub has >= 4.5:1 contrast against surface (got ${contrastSub.toFixed(2)}:1)`);
+}
+
 console.log('--- ALL TYPEARENA TESTS PASSED PERFECTLY! ---');
 
 

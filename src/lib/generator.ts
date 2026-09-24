@@ -1,5 +1,9 @@
 import {
-  ENGLISH_WORDS,
+  EASY_WORDS,
+  NORMAL_WORDS,
+  ADVANCED_WORDS,
+  EXPERT_WORDS,
+  MASTER_WORDS,
   HINDI_WORDS,
   SPANISH_WORDS,
   FRENCH_WORDS,
@@ -12,7 +16,8 @@ import type {
   TimeOption,
   WordOption,
   QuoteLength,
-  LanguageOption
+  LanguageOption,
+  Difficulty
 } from '../types';
 
 export interface GeneratorOptions {
@@ -23,6 +28,7 @@ export interface GeneratorOptions {
   customWords?: number;
   quoteLength?: QuoteLength;
   language?: LanguageOption;
+  difficulty?: Difficulty;
   punctuation?: boolean;
   numbers?: boolean;
   customText?: string;
@@ -31,19 +37,28 @@ export interface GeneratorOptions {
   mistakeWords?: string[];
 }
 
-export function getWordlistByLanguage(lang: LanguageOption = 'english'): string[] {
-  switch (lang) {
-    case 'hindi':
-      return HINDI_WORDS;
-    case 'spanish':
-      return SPANISH_WORDS;
-    case 'french':
-      return FRENCH_WORDS;
-    case 'german':
-      return GERMAN_WORDS;
-    case 'english':
+export function getWordlistByLanguage(
+  lang: LanguageOption = 'english',
+  difficulty: Difficulty = 'normal'
+): string[] {
+  if (lang === 'hindi') return HINDI_WORDS;
+  if (lang === 'spanish') return SPANISH_WORDS;
+  if (lang === 'french') return FRENCH_WORDS;
+  if (lang === 'german') return GERMAN_WORDS;
+
+  // English difficulty-segregated wordlists
+  switch (difficulty) {
+    case 'easy':
+      return EASY_WORDS;
+    case 'advanced':
+      return ADVANCED_WORDS;
+    case 'expert':
+      return EXPERT_WORDS;
+    case 'master':
+      return MASTER_WORDS;
+    case 'normal':
     default:
-      return ENGLISH_WORDS;
+      return NORMAL_WORDS;
   }
 }
 
@@ -54,6 +69,7 @@ export function generateTestText(options: GeneratorOptions): string {
     customWords = 25,
     quoteLength = 'medium',
     language = 'english',
+    difficulty = 'normal',
     punctuation = false,
     numbers = false,
     customText = '',
@@ -84,7 +100,7 @@ export function generateTestText(options: GeneratorOptions): string {
 
   // 4. Mistake-focused drill generation
   if (mistakeKeys.length > 0 || mistakeWords.length > 0) {
-    const baseList = getWordlistByLanguage(language);
+    const baseList = getWordlistByLanguage(language, difficulty);
     const drillList: string[] = [];
 
     // Add actual mistyped words first
@@ -98,6 +114,7 @@ export function generateTestText(options: GeneratorOptions): string {
       const wordsWithMistakes = baseList.filter((w) =>
         lowerMistakes.some((mk) => w.includes(mk))
       );
+
       // Pick 20 words containing the weak keys
       for (let i = 0; i < 20; i++) {
         if (wordsWithMistakes.length > 0) {
@@ -108,14 +125,13 @@ export function generateTestText(options: GeneratorOptions): string {
     }
 
     if (drillList.length >= 10) {
-      // Shuffle drillList
       const shuffled = [...drillList].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, 30).join(' ');
     }
   }
 
   // 5. Standard Word & Time mode generation
-  const wordsPool = getWordlistByLanguage(language);
+  const wordsPool = getWordlistByLanguage(language, difficulty);
   let count = 30; // default for time mode
 
   if (mode === 'words') {
@@ -127,23 +143,22 @@ export function generateTestText(options: GeneratorOptions): string {
   } else if (mode === 'time') {
     // Generate ample words so user never runs out during the timer
     const seconds = options.timeOption === 'custom' ? (options.customTime || 60) : (options.timeOption || 30);
-    // At ~120 WPM, user types 2 words/sec. Provide 3x safety margin:
+    // Provide generous word count safety buffer for high speed typists
     count = Math.max(40, Math.ceil(seconds * 3.5));
   } else if (mode === 'zen') {
-    // Zen mode provides initial large buffer, can replenish
     count = 150;
   }
 
   const generatedWords: string[] = [];
-  const punctuationMarks = ['.', ',', '!', '?', ';', ':'];
+  const punctuationMarks = difficulty === 'master'
+    ? ['.', ',', '!', '?', ';', ':', '-', '—']
+    : ['.', ',', '!', '?', ';', ':'];
 
   for (let i = 0; i < count; i++) {
-    // Pick word
     let word = wordsPool[Math.floor(Math.random() * wordsPool.length)];
 
     // Numbers inclusion
     if (numbers && Math.random() < 0.18) {
-      // Either inject a pure number or attach a number
       if (Math.random() < 0.6) {
         word = String(Math.floor(Math.random() * 990) + 10);
       } else {
@@ -153,15 +168,13 @@ export function generateTestText(options: GeneratorOptions): string {
 
     // Punctuation & Capitalization inclusion
     if (punctuation) {
-      // Capitalize first letter occasionally (or beginning of sentence)
       if (i === 0 || generatedWords[i - 1]?.endsWith('.')) {
         word = word.charAt(0).toUpperCase() + word.slice(1);
-      } else if (Math.random() < 0.15) {
+      } else if (Math.random() < (difficulty === 'expert' || difficulty === 'master' ? 0.25 : 0.15)) {
         word = word.charAt(0).toUpperCase() + word.slice(1);
       }
 
-      // Add punctuation mark occasionally
-      if (i < count - 1 && Math.random() < 0.22) {
+      if (i < count - 1 && Math.random() < (difficulty === 'master' ? 0.3 : 0.22)) {
         const mark = punctuationMarks[Math.floor(Math.random() * punctuationMarks.length)];
         word = `${word}${mark}`;
       }

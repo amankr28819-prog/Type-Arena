@@ -333,8 +333,10 @@ export const TestConfigBar: React.FC<TestConfigBarProps> = ({
             value={difficulty}
             onChange={(e) => onDifficultyChange(e.target.value as Difficulty)}
             disabled={disabled}
-            className="bg-[var(--bg-subtle)] text-[var(--text-main)] px-2 py-1 rounded-md border border-[var(--border-color)] text-xs cursor-pointer focus:outline-none"
+            className="bg-[var(--bg-subtle)] text-[var(--text-main)] px-2 py-1 rounded-md border border-[var(--border-color)] text-xs cursor-pointer focus:outline-none capitalize font-medium transition-all"
+            aria-label="Difficulty"
           >
+            <option value="easy">Easy</option>
             <option value="normal">Normal</option>
             <option value="advanced">Advanced</option>
             <option value="expert">Expert (Stop on Error)</option>

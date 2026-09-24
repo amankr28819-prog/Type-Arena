@@ -208,7 +208,9 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
                       <span
                         className={
                           !isTyped
-                            ? 'typing-char-pending'
+                            ? isCaretHere
+                              ? 'typing-char-current underline decoration-[var(--color-primary)] decoration-2 underline-offset-4'
+                              : 'typing-char-pending'
                             : isCorrect
                             ? 'typing-char-correct font-semibold'
                             : 'typing-char-incorrect font-semibold'
@@ -250,7 +252,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
 
           // Future pending words
           return (
-            <span key={wordIdx} className="inline-flex text-[var(--text-sub)] opacity-70">
+            <span key={wordIdx} className="inline-flex text-[var(--typing-target)] opacity-90 font-normal">
               {word}
             </span>
           );

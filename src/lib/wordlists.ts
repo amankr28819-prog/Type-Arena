@@ -21,6 +21,49 @@ export const ENGLISH_WORDS: string[] = [
   'hold', 'west', 'ground', 'interest', 'reach', 'fast', 'verb', 'sing', 'listen', 'six', 'table', 'travel', 'less', 'morning', 'ten', 'simple', 'several', 'vowel', 'toward', 'war'
 ];
 
+export const EASY_WORDS: string[] = [
+  'the', 'and', 'to', 'in', 'is', 'it', 'you', 'that', 'he', 'was', 'for', 'on', 'are', 'as', 'with', 'his', 'they', 'at', 'be', 'this',
+  'have', 'from', 'or', 'one', 'had', 'by', 'word', 'but', 'not', 'what', 'all', 'were', 'we', 'when', 'your', 'can', 'said', 'there', 'use', 'an',
+  'each', 'she', 'do', 'how', 'if', 'will', 'up', 'out', 'then', 'them', 'so', 'some', 'her', 'make', 'like', 'him', 'into', 'time', 'has', 'look',
+  'two', 'more', 'go', 'see', 'no', 'way', 'my', 'than', 'been', 'call', 'who', 'oil', 'its', 'now', 'find', 'long', 'down', 'day', 'did', 'get',
+  'come', 'made', 'may', 'part', 'over', 'new', 'take', 'only', 'little', 'work', 'know', 'place', 'year', 'live', 'me', 'back', 'give', 'most', 'very', 'after',
+  'thing', 'our', 'just', 'name', 'good', 'man', 'think', 'say', 'great', 'where', 'help', 'line', 'right', 'too', 'mean', 'old', 'any', 'same', 'tell', 'boy'
+];
+
+export const NORMAL_WORDS: string[] = [
+  'about', 'before', 'change', 'family', 'number', 'people', 'system', 'water', 'world', 'stream', 'rhythm', 'spark', 'pulse', 'mountain',
+  'question', 'complete', 'product', 'possible', 'develop', 'special', 'behind', 'produce', 'travel', 'morning', 'simple', 'several', 'toward',
+  'ground', 'interest', 'beauty', 'island', 'common', 'figure', 'pattern', 'letter', 'problem', 'record', 'second', 'friend', 'listen', 'science',
+  'decide', 'surface', 'center', 'winter', 'summer', 'garden', 'market', 'planet', 'silver', 'circle', 'notice', 'modern', 'design', 'engine',
+  'energy', 'action', 'motion', 'player', 'yellow', 'bridge', 'castle', 'forest', 'valley', 'window', 'nature', 'vision', 'signal', 'camera',
+  'memory', 'shadow', 'source', 'spirit', 'screen', 'talent', 'target', 'temple', 'theory', 'ticket', 'tunnel', 'unique', 'vector', 'volume'
+];
+
+export const ADVANCED_WORDS: string[] = [
+  'accommodate', 'circumstance', 'infrastructure', 'extraordinary', 'philosophy', 'distinguish', 'phenomenon', 'perspective', 'substantial',
+  'comprehensive', 'fundamental', 'collaborate', 'sophisticated', 'predominant', 'counterpart', 'deliberate', 'heterogeneous', 'spontaneous',
+  'demonstrate', 'unprecedented', 'configuration', 'simultaneous', 'breakthrough', 'characteristic', 'enthusiastic', 'implementation',
+  'significance', 'recommendation', 'transformation', 'vulnerability', 'acknowledgment', 'revolutionary', 'sustainability', 'controversial',
+  'differentiation', 'generalization', 'crystallization', 'proportionality', 'telecommunications', 'interchangeable', 'straightforward',
+  'superficial', 'unquestionable', 'rehabilitation', 'biodiversity', 'synchronization', 'photosynthesis', 'thermodynamics'
+];
+
+export const EXPERT_WORDS: string[] = [
+  'juxtaposition', 'idiosyncratic', 'quintessential', 'anachronistic', 'sesquipedalian', 'pusillanimous', 'ubiquitous', 'epistemology',
+  'verisimilitude', 'magnanimous', 'recalcitrant', 'supercilious', 'vicissitude', 'peregrination', 'pusillanimity', 'incommensurable',
+  'paraphernalia', 'circumnavigation', 'electromagnetic', 'counterproductive', 'grandiloquent', 'schadenfreude', 'tintinnabulation',
+  'circumspection', 'disproportionate', 'multidimensional', 'neuroplasticity', 'plenipotentiary', 'quasiparticle', 'somnambulist',
+  'prestidigitation', 'onomatopoeic', 'labyrinthine', 'garrulousness', 'mellifluous', 'perspicacious', 'valitudinarian', 'ineffability'
+];
+
+export const MASTER_WORDS: string[] = [
+  'electroencephalography', 'deoxyribonucleic', 'immunohistochemistry', 'counterrevolutionary', 'pneumonoultramicroscopic',
+  'pseudopseudohypoparathyroidism', 'psychoneuroimmunology', 'incomprehensibility', 'floccinaucinihilipilification',
+  'compartmentalization', 'uncharacteristically', 'hypercholesterolemia', 'biodegradability', 'magnetohydrodynamics',
+  'microminiaturization', 'spectrophotometry', 'supercalifragilistic', 'electrocardiographic', 'dacryocystorhinostomy',
+  'otorhinolaryngology', 'sphygmomanometer', 'gastroenterology', 'paleoanthropology', 'radioimmunoelectrophoresis'
+];
+
 export const HINDI_WORDS: string[] = [
   'namaste', 'bharat', 'samay', 'vishwa', 'gyan', 'safalta', 'karma', 'dhyan', 'shanti', 'prayas',
   'prem', 'mitra', 'jeevan', 'sapna', 'prakriti', 'vidya', 'sahitya', 'desh', 'dharma', 'satya',

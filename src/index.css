@@ -78,6 +78,67 @@
   animation: caretBlink 1s ease-in-out infinite;
 }
 
+/* Typing Character Rendering & High Contrast Tokens */
+.typing-char-pending {
+  color: var(--typing-target, var(--text-sub));
+  transition: color 0.1s ease;
+}
+
+.typing-char-correct {
+  color: var(--typing-correct, var(--color-correct));
+  text-shadow: 0 0 10px color-mix(in srgb, var(--typing-correct, var(--color-correct)) 30%, transparent);
+}
+
+.typing-char-incorrect {
+  color: var(--typing-error, var(--color-error)) !important;
+  background-color: var(--typing-error-bg, var(--color-error-bg));
+  border-radius: 2px;
+  text-decoration: underline wavy var(--typing-error, var(--color-error));
+  text-underline-offset: 3px;
+}
+
+.typing-char-extra {
+  color: var(--typing-error, var(--color-error)) !important;
+  opacity: 0.85;
+  text-decoration: underline wavy var(--typing-error, var(--color-error));
+  text-underline-offset: 3px;
+}
+
+.typing-char-current {
+  color: var(--typing-current, var(--text-main));
+  font-weight: 700;
+  position: relative;
+}
+
+/* Caret Variations */
+.caret-line {
+  width: 2.5px;
+  background-color: var(--color-caret);
+  box-shadow: 0 0 8px var(--color-caret);
+  border-radius: 9999px;
+}
+
+.caret-block {
+  background-color: color-mix(in srgb, var(--color-caret) 35%, transparent);
+  border: 1px solid var(--color-caret);
+  border-radius: 2px;
+}
+
+.caret-underline {
+  border-bottom: 2.5px solid var(--color-caret);
+  box-shadow: 0 2px 6px var(--color-caret);
+}
+
+.caret-box {
+  border: 1.5px solid var(--color-caret);
+  border-radius: 3px;
+  box-shadow: 0 0 6px var(--color-caret);
+}
+
+.caret-smooth {
+  transition: left 0.08s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.08s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
 .glow-active {
   animation: pulseGlow 2s ease-in-out infinite;
 }
