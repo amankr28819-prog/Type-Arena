@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://typearena.vercel.app/sitemap.xml

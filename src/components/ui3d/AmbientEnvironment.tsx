@@ -30,10 +30,12 @@ export const AmbientEnvironment: React.FC = () => {
     return () => window.removeEventListener('mousemove', handlePointerMove);
   }, [settings.cursorGlow, isMobile, settings.animationIntensity]);
 
-  // Particle simulation loop with full High-DPI support
+  // Particle simulation loop with full High-DPI support & visibility pausing
   useEffect(() => {
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (
       settings.reducedMotion ||
+      prefersReducedMotion ||
       settings.animationIntensity === 'off' ||
       settings.backgroundAtmosphere === 'none'
     ) {
@@ -46,6 +48,7 @@ export const AmbientEnvironment: React.FC = () => {
     if (!ctx) return;
 
     let animationId: number;
+    let isTabVisible = !document.hidden;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     let width = window.innerWidth;
@@ -109,7 +112,17 @@ export const AmbientEnvironment: React.FC = () => {
 
     const primaryColor = currentTheme.colors.colorPrimary || '#38bdf8';
 
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+      if (isTabVisible) {
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     const render = () => {
+      if (!isTabVisible) return;
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i++) {
@@ -163,6 +176,7 @@ export const AmbientEnvironment: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       cancelAnimationFrame(animationId);
     };
   }, [currentTheme, settings.reducedMotion, settings.animationIntensity, settings.backgroundAtmosphere, isMobile]);

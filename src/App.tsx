@@ -15,14 +15,47 @@ import { StatsPage } from './pages/StatsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { cleanupCharacterStudioData } from './lib/storage';
 
+function getTabFromPath(pathname: string): NavTab {
+  const clean = pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+  if (!clean || clean === 'home') return 'home';
+  if (clean.startsWith('learn')) return 'learn';
+  if (clean.startsWith('practice')) return 'practice';
+  if (clean.startsWith('exam') || clean.startsWith('test')) return 'exam';
+  if (clean.startsWith('game') || clean.startsWith('games')) return 'games';
+  if (clean.startsWith('stat') || clean.startsWith('stats')) return 'stats';
+  if (clean.startsWith('setting') || clean.startsWith('settings')) return 'settings';
+  return 'home';
+}
+
+function getPathFromTab(tab: NavTab): string {
+  if (tab === 'home') return '/';
+  return `/${tab}`;
+}
+
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<NavTab>('home');
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    if (typeof window !== 'undefined') {
+      return getTabFromPath(window.location.pathname);
+    }
+    return 'home';
+  });
+
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const { settings } = useSettings();
 
   // One-time cleanup of legacy character data
   useEffect(() => {
     cleanupCharacterStudioData();
+  }, []);
+
+  // Synchronize with browser Back and Forward history buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const tab = getTabFromPath(window.location.pathname);
+      setActiveTab(tab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // States to pass mistakes directly into practice drill
@@ -32,7 +65,19 @@ function AppContent() {
   const handleNavigateToPractice = (keys: string[], words: string[]) => {
     setMistakeKeys(keys);
     setMistakeWords(words);
-    setActiveTab('practice');
+    handleTabChange('practice');
+  };
+
+  const handleTabChange = (tab: NavTab) => {
+    if (tab !== 'practice') {
+      setMistakeKeys([]);
+      setMistakeWords([]);
+    }
+    setActiveTab(tab);
+    const targetPath = getPathFromTab(tab);
+    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
   };
 
   return (
@@ -45,13 +90,7 @@ function AppContent() {
       {/* Navigation Bar */}
       <Navbar
         activeTab={activeTab}
-        onTabChange={(tab) => {
-          if (tab !== 'practice') {
-            setMistakeKeys([]);
-            setMistakeWords([]);
-          }
-          setActiveTab(tab);
-        }}
+        onTabChange={handleTabChange}
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
       />
 
@@ -79,7 +118,7 @@ function AppContent() {
 
       {/* Footer */}
       <Footer
-        onOpenSettings={() => setActiveTab('settings')}
+        onOpenSettings={() => handleTabChange('settings')}
         onOpenThemes={() => setIsThemeModalOpen(true)}
       />
 
