@@ -172,6 +172,74 @@ export interface CourseProgress {
   timestamp: number;
 }
 
+export type SubLessonType =
+  | 'key_intro'
+  | 'basic_drill'
+  | 'spacing_drill'
+  | 'words'
+  | 'sentences'
+  | 'accuracy_challenge'
+  | 'speed_challenge'
+  | 'review';
+
+export interface SubLesson {
+  id: string;
+  lessonId: string;
+  order: number;
+  title: string;
+  type: SubLessonType;
+  description: string;
+  targetKeys: string[];
+  learnedKeys: string[];
+  targetFinger: string;
+  targetFingerCode: 'lp' | 'lr' | 'lm' | 'li' | 'th' | 'ri' | 'rm' | 'rr' | 'rp';
+  exerciseText: string;
+  durationSeconds: number;
+  minAccuracy: number;
+  minWpm: number;
+  tips: string[];
+}
+
+export interface DetailedLesson {
+  id: string;
+  order: number;
+  tier: 'beginner' | 'intermediate' | 'advanced';
+  title: string;
+  shortTitle: string;
+  description: string;
+  objectives: string[];
+  keysIntroduced: string[];
+  fingersUsed: { finger: string; hand: 'left' | 'right'; keys: string[] }[];
+  estimatedMinutes: number;
+  subLessons: SubLesson[];
+}
+
+export interface SubLessonProgress {
+  subLessonId: string;
+  lessonId: string;
+  completed: boolean;
+  bestWpm: number;
+  bestAccuracy: number;
+  bestConsistency: number;
+  lowestErrors: number;
+  attempts: number;
+  totalTimeSpent: number; // in seconds
+  keyStats: Record<string, { correct: number; incorrect: number }>;
+  timestamp: number;
+}
+
+export interface LearnStats {
+  completedLessonsCount: number;
+  completedSubLessonsCount: number;
+  totalSubLessonsCount: number;
+  courseProgressPercent: number;
+  totalLearningTimeSeconds: number;
+  bestOverallWpm: number;
+  bestOverallAccuracy: number;
+  weakestKeys: { key: string; errorRate: number; attempts: number }[];
+  currentStreakDays: number;
+}
+
 export interface ExamConfig {
   duration: number; // in seconds, e.g. 60, 120, 300
   minWpm: number;

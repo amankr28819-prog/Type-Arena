@@ -3,20 +3,25 @@ import type {
   PersonalBests,
   UserSettings,
   CourseProgress,
+  SubLessonProgress,
+  LearnStats,
   KeyAnalytics,
   BigramAnalytics
 } from '../types';
 import { extractKeyAnalytics, extractBigramAnalytics } from './metrics';
+import { DETAILED_LESSONS, getAllSubLessonsCount } from './learnCurriculum';
 
 const DB_NAME = 'TypeArenaDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_HISTORY = 'history';
 const STORE_KEY_STATS = 'key_stats';
 const STORE_BIGRAM_STATS = 'bigram_stats';
 const STORE_COURSE_PROGRESS = 'course_progress';
+const STORE_SUBLESSON_PROGRESS = 'sublesson_progress';
 
 const STORAGE_KEY_SETTINGS = 'typearena_settings';
 const STORAGE_KEY_PBS = 'typearena_pbs';
+const STORAGE_KEY_SUBLESSON_FALLBACK = 'typearena_sublessons_fallback';
 
 export const DEFAULT_SETTINGS: UserSettings = {
   themeId: 'midnight',
@@ -101,6 +106,9 @@ class StorageManager {
           }
           if (!db.objectStoreNames.contains(STORE_COURSE_PROGRESS)) {
             db.createObjectStore(STORE_COURSE_PROGRESS, { keyPath: 'lessonId' });
+          }
+          if (!db.objectStoreNames.contains(STORE_SUBLESSON_PROGRESS)) {
+            db.createObjectStore(STORE_SUBLESSON_PROGRESS, { keyPath: 'subLessonId' });
           }
         };
 
@@ -449,6 +457,148 @@ class StorageManager {
     } catch {}
   }
 
+  // --- SubLesson Progress ---
+  public async getSubLessonProgress(): Promise<Record<string, SubLessonProgress>> {
+    const db = await this.initDB();
+    if (db) {
+      try {
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_SUBLESSON_PROGRESS, 'readonly');
+          const store = tx.objectStore(STORE_SUBLESSON_PROGRESS);
+          const req = store.getAll();
+          req.onsuccess = () => {
+            const list = (req.result || []) as SubLessonProgress[];
+            const map: Record<string, SubLessonProgress> = {};
+            list.forEach((item) => (map[item.subLessonId] = item));
+            resolve(map);
+          };
+          req.onerror = () => resolve({});
+        });
+      } catch {}
+    }
+
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_SUBLESSON_FALLBACK) || '{}';
+      return JSON.parse(data);
+    } catch {
+      return {};
+    }
+  }
+
+  public async saveSubLessonProgress(progress: SubLessonProgress): Promise<void> {
+    const db = await this.initDB();
+    if (db) {
+      try {
+        const tx = db.transaction(STORE_SUBLESSON_PROGRESS, 'readwrite');
+        tx.objectStore(STORE_SUBLESSON_PROGRESS).put(progress);
+      } catch {}
+    }
+
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_SUBLESSON_FALLBACK) || '{}';
+      const parsed = JSON.parse(data);
+      parsed[progress.subLessonId] = progress;
+      localStorage.setItem(STORAGE_KEY_SUBLESSON_FALLBACK, JSON.stringify(parsed));
+    } catch {}
+  }
+
+  public async getLearnOverviewStats(): Promise<LearnStats> {
+    const subProgMap = await this.getSubLessonProgress();
+    const subList = Object.values(subProgMap);
+    const completedSubs = subList.filter((s) => s.completed);
+    const totalSubCount = getAllSubLessonsCount();
+
+    // Completed Lessons calculation: a lesson is completed when ALL of its sublessons are completed!
+    let completedLessonsCount = 0;
+    for (const lesson of DETAILED_LESSONS) {
+      const allCompleted = lesson.subLessons.every((s) => subProgMap[s.id]?.completed);
+      if (allCompleted && lesson.subLessons.length > 0) {
+        completedLessonsCount++;
+      }
+    }
+
+    const courseProgressPercent = totalSubCount > 0
+      ? Math.min(100, Math.round((completedSubs.length / totalSubCount) * 100))
+      : 0;
+
+    let totalTime = 0;
+    let maxWpm = 0;
+    let sumAcc = 0;
+    let accCount = 0;
+
+    // Per-key error tracking aggregation across all completed sublessons
+    const keyMistakesMap: Record<string, { errors: number; total: number }> = {};
+
+    subList.forEach((s) => {
+      totalTime += s.totalTimeSpent || 0;
+      if (s.bestWpm > maxWpm) maxWpm = s.bestWpm;
+      if (s.bestAccuracy > 0) {
+        sumAcc += s.bestAccuracy;
+        accCount++;
+      }
+      if (s.keyStats) {
+        for (const [key, val] of Object.entries(s.keyStats)) {
+          if (!keyMistakesMap[key]) {
+            keyMistakesMap[key] = { errors: 0, total: 0 };
+          }
+          keyMistakesMap[key].errors += val.incorrect;
+          keyMistakesMap[key].total += val.correct + val.incorrect;
+        }
+      }
+    });
+
+    const bestOverallAccuracy = accCount > 0 ? Math.round(sumAcc / accCount) : 0;
+
+    // Extract weakest keys
+    const weakestKeys = Object.entries(keyMistakesMap)
+      .filter(([_, stats]) => stats.total >= 4 && stats.errors > 0)
+      .map(([key, stats]) => ({
+        key,
+        errorRate: Math.round((stats.errors / stats.total) * 100),
+        attempts: stats.total
+      }))
+      .sort((a, b) => b.errorRate - a.errorRate)
+      .slice(0, 6);
+
+    // Calculate real learning streak
+    let currentStreakDays = 0;
+    if (completedSubs.length > 0) {
+      const dates = Array.from(
+        new Set(
+          completedSubs
+            .filter((s) => s.timestamp > 0)
+            .map((s) => new Date(s.timestamp).toDateString())
+        )
+      );
+      currentStreakDays = dates.length;
+    }
+
+    return {
+      completedLessonsCount,
+      completedSubLessonsCount: completedSubs.length,
+      totalSubLessonsCount: totalSubCount,
+      courseProgressPercent,
+      totalLearningTimeSeconds: totalTime,
+      bestOverallWpm: maxWpm,
+      bestOverallAccuracy,
+      weakestKeys,
+      currentStreakDays
+    };
+  }
+
+  public async resetLearnProgress(): Promise<void> {
+    const db = await this.initDB();
+    if (db) {
+      try {
+        const tx = db.transaction([STORE_COURSE_PROGRESS, STORE_SUBLESSON_PROGRESS], 'readwrite');
+        tx.objectStore(STORE_COURSE_PROGRESS).clear();
+        tx.objectStore(STORE_SUBLESSON_PROGRESS).clear();
+      } catch {}
+    }
+    localStorage.removeItem('typearena_courses_fallback');
+    localStorage.removeItem(STORAGE_KEY_SUBLESSON_FALLBACK);
+  }
+
   // --- Export, Import & Reset ---
   public async exportAllData(): Promise<string> {
     const settings = this.getSettings();
@@ -556,11 +706,13 @@ class StorageManager {
       const db = await this.initDB();
       if (db) {
         try {
-          const tx = db.transaction(STORE_COURSE_PROGRESS, 'readwrite');
+          const tx = db.transaction([STORE_COURSE_PROGRESS, STORE_SUBLESSON_PROGRESS], 'readwrite');
           tx.objectStore(STORE_COURSE_PROGRESS).clear();
+          tx.objectStore(STORE_SUBLESSON_PROGRESS).clear();
         } catch {}
       }
       localStorage.removeItem('typearena_courses_fallback');
+      localStorage.removeItem(STORAGE_KEY_SUBLESSON_FALLBACK);
     }
   }
 }

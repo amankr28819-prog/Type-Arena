@@ -11,6 +11,15 @@ import {
 } from '../src/lib/metrics';
 import { BUILTIN_THEMES } from '../src/lib/themes';
 import { COURSE_LESSONS } from '../src/lib/courses';
+import {
+  DETAILED_LESSONS,
+  getLessonById,
+  getSubLessonById,
+  getNextSubLesson,
+  getAllSubLessonsCount,
+  generateAdaptivePracticeText
+} from '../src/lib/learnCurriculum';
+import { getFingerForChar } from '../src/components/learn/HandPlacementVisualizer';
 import { ENGLISH_WORDS, HINDI_WORDS, QUOTES_LIBRARY, CODE_SNIPPETS } from '../src/lib/wordlists';
 
 function assert(condition: boolean, message: string) {
@@ -198,6 +207,38 @@ assert(blockedDamage < incomingBotDamage, `Parry block reduces damage taken from
 
 // 8. Verify TypeArena Battle Combat Mechanics & Safety
 assert(incomingBotDamage > blockedDamage, 'Parry system successfully mitigates incoming damage');
+
+// 9. Verify Redesigned 10-Lesson Learn Curriculum & Finger Placement System
+assert(DETAILED_LESSONS.length === 10, `Detailed curriculum has exactly 10 major lessons (found ${DETAILED_LESSONS.length})`);
+const totalSubLessons = getAllSubLessonsCount();
+assert(totalSubLessons >= 60, `Curriculum has >= 60 sublessons (found ${totalSubLessons})`);
+
+const lesson1 = getLessonById('lesson-1');
+assert(!!lesson1 && lesson1.subLessons.length >= 7, 'Lesson 1 exists with >= 7 sublessons');
+
+const subResult = getSubLessonById('l1-s1');
+assert(!!subResult && subResult.subLesson.title.includes('F and J'), 'Sublesson l1-s1 found with expected title');
+
+const nextSubResult = getNextSubLesson('l1-s1');
+assert(!!nextSubResult && nextSubResult.subLesson.id === 'l1-s2', `Next sublesson of l1-s1 is l1-s2 (got ${nextSubResult?.subLesson?.id})`);
+
+// Test finger mappings
+const fFinger = getFingerForChar('f');
+assert(fFinger.name === 'Left Index' && fFinger.reachDirection === 'home', `Key 'f' maps to Left Index home (got ${fFinger.name})`);
+
+const jFinger = getFingerForChar('j');
+assert(jFinger.name === 'Right Index' && jFinger.reachDirection === 'home', `Key 'j' maps to Right Index home (got ${jFinger.name})`);
+
+const eFinger = getFingerForChar('e');
+assert(eFinger.name === 'Left Middle' && eFinger.reachDirection === 'up', `Key 'e' maps to Left Middle up (got ${eFinger.name})`);
+
+const spaceFinger = getFingerForChar(' ');
+assert(spaceFinger.name === 'Thumbs' && spaceFinger.hand === 'right', `Key ' ' maps to thumb (got ${spaceFinger.name})`);
+
+// Test adaptive practice generation from weak keys
+const adaptiveText = generateAdaptivePracticeText(['d', 'k'], ['dk', 'kd']);
+assert(adaptiveText.length > 20, `Adaptive practice text generated successfully (${adaptiveText.length} chars)`);
+assert(adaptiveText.includes('d') || adaptiveText.includes('k'), 'Adaptive practice text targets weak keys');
 
 console.log('--- ALL TYPEARENA TESTS PASSED PERFECTLY! ---');
 
