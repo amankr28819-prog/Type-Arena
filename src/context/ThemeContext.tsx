@@ -19,7 +19,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customThemes, setCustomThemes] = useState<ThemeConfig[]>(settings.customThemes || []);
 
   const allThemes = [...BUILTIN_THEMES, ...customThemes];
-  const activeTheme = allThemes.find((t) => t.id === settings.themeId) || BUILTIN_THEMES[0];
+  const activeTheme =
+    allThemes.find((t) => t.id === settings.themeId) ||
+    allThemes.find((t) => t.id === 'paper-clean') ||
+    BUILTIN_THEMES[0];
 
   useEffect(() => {
     applyTheme(activeTheme);
@@ -62,7 +65,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteCustomTheme = (themeId: string) => {
     const updatedCustom = customThemes.filter((t) => t.id !== themeId);
     setCustomThemes(updatedCustom);
-    const nextThemeId = settings.themeId === themeId ? 'midnight' : settings.themeId;
+    const nextThemeId = settings.themeId === themeId ? 'paper-clean' : settings.themeId;
     const updatedSettings = {
       ...settings,
       themeId: nextThemeId,

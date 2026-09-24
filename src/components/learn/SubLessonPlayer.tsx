@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Play,
   Pause,
@@ -16,6 +16,7 @@ import {
 import type { DetailedLesson, SubLesson, SubLessonProgress } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
 import { useLearnEngine } from '../../hooks/useLearnEngine';
+import { useRestartShortcut } from '../../hooks/useRestartShortcut';
 import { HandPlacementVisualizer } from './HandPlacementVisualizer';
 import { VirtualKeyboard } from '../typing/VirtualKeyboard';
 import { Button3D } from '../ui3d/Button3D';
@@ -105,12 +106,27 @@ export const SubLessonPlayer: React.FC<SubLessonPlayerProps> = ({
   const perKeyAnalysis = engine.getPerKeyAnalysis();
   const mistakeKeys = perKeyAnalysis.filter((k) => k.incorrect > 0).map((k) => k.key);
 
+  const handleRestartSubLesson = useCallback(() => {
+    engine.resetSession();
+    setLastProgress(null);
+    setLastPassed(null);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [engine]);
+
+  useRestartShortcut({
+    onRestart: handleRestartSubLesson,
+    enabled: true
+  });
+
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 select-none" onClick={handleContainerClick}>
       {/* Hidden real input listener */}
       <input
         ref={inputRef}
         type="text"
+        data-typing-input="true"
         className="opacity-0 absolute -z-50 pointer-events-none"
         onKeyDown={engine.handleKeyDown}
         onFocus={() => setIsFocused(true)}

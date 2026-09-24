@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Target,
   Sparkles,
@@ -13,6 +13,7 @@ import { generateTestText } from '../lib/generator';
 import type { KeyAnalytics, BigramAnalytics, TestResult } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { useTypingEngine } from '../hooks/useTypingEngine';
+import { useRestartShortcut } from '../hooks/useRestartShortcut';
 import { TypingArea } from '../components/typing/TypingArea';
 import { VirtualKeyboard } from '../components/typing/VirtualKeyboard';
 
@@ -118,6 +119,18 @@ export const PracticePage: React.FC<PracticePageProps> = ({
       disableBackspace: false
     },
     onTestComplete: handleDrillComplete
+  });
+
+  const handleRestartDrill = useCallback(() => {
+    setDrillCompleted(false);
+    setDrillResult(null);
+    engine.resetTest();
+    setIsFocused(true);
+  }, [engine]);
+
+  useRestartShortcut({
+    onRestart: handleRestartDrill,
+    enabled: Boolean(activeDrillTitle && activeDrillText)
   });
 
   return (

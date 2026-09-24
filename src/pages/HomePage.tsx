@@ -10,6 +10,7 @@ import type {
 } from '../types';
 import { generateTestText } from '../lib/generator';
 import { useTypingEngine } from '../hooks/useTypingEngine';
+import { useRestartShortcut } from '../hooks/useRestartShortcut';
 import { useSettings } from '../context/SettingsContext';
 import { storage } from '../lib/storage';
 import { TestConfigBar } from '../components/typing/TestConfigBar';
@@ -57,6 +58,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
     storage.getKeyStats().then(setKeyStats);
   }, [completedResult]);
 
+  const [textVersion, setTextVersion] = useState(0);
+
   // Generate test text based on current options
   const initialText = useMemo(() => {
     return generateTestText({
@@ -85,7 +88,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
     punctuation,
     numbers,
     customText,
-    codeIndex
+    codeIndex,
+    textVersion
   ]);
 
   const handleTestComplete = useCallback(
@@ -119,6 +123,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
     setCompletedResult(null);
     setIsNewPB(false);
     setPbType(undefined);
+    setTextVersion((v) => v + 1);
     engine.resetTest();
     setIsFocused(true);
   }, [engine]);
@@ -131,7 +136,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToPractice }) => {
     handleRestart();
   }, [mode, handleRestart]);
 
-  // Global restart shortcuts: Tab + Enter or Escape
+  // Reliable typing restart shortcut: TAB → ENTER
+  useRestartShortcut({
+    onRestart: handleRestart,
+    enabled: true
+  });
+
+  // Quick escape restart shortcut
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

@@ -337,15 +337,19 @@ export function useTypingEngine({
 
       const key = e.key;
 
-      // Ignore navigation, functional, modifier keys alone
+      // Prevent browser focus shift for Tab and Escape
+      if (key === 'Tab' || key === 'Escape') {
+        e.preventDefault();
+        return;
+      }
+
+      // Ignore modifier and function keys alone
       if (
-        key === 'Tab' ||
         key === 'Shift' ||
         key === 'Control' ||
         key === 'Alt' ||
         key === 'Meta' ||
         key === 'CapsLock' ||
-        key === 'Escape' ||
         (key.startsWith('F') && key.length > 1)
       ) {
         return;

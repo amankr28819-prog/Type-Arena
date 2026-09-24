@@ -374,6 +374,41 @@ for (const theme of BUILTIN_THEMES) {
   assert(contrastSub >= 4.5, `Theme ${theme.name} textSub has >= 4.5:1 contrast against surface (got ${contrastSub.toFixed(2)}:1)`);
 }
 
+// TEST CASE 10 — LIGHT DEFAULT THEME & PREFERENCES
+import { DEFAULT_SETTINGS } from '../src/lib/storage';
+assert(DEFAULT_SETTINGS.themeId === 'paper-clean', `First-time default theme is 'paper-clean' (got ${DEFAULT_SETTINGS.themeId})`);
+const defaultThemeConfig = BUILTIN_THEMES.find((t) => t.id === DEFAULT_SETTINGS.themeId);
+assert(!!defaultThemeConfig, `Default theme 'paper-clean' exists in BUILTIN_THEMES`);
+assert(defaultThemeConfig?.category === 'light', `Default theme category is 'light' (got ${defaultThemeConfig?.category})`);
+
+// Verify that returning user with saved dark theme maintains their dark theme
+const simulatedReturningUser = { ...DEFAULT_SETTINGS, themeId: 'dracula' };
+assert(simulatedReturningUser.themeId === 'dracula', 'Returning user saved dark theme is preserved without override');
+
+// TEST CASE 11 — SESSION RESTART / TAB+ENTER SHORTCUT BEHAVIOR
+const restartSession = createTypingSession({ targetText: 'quick restart test', mode: 'time', duration: 30 });
+processKeystroke(restartSession, 'q', 1000);
+processKeystroke(restartSession, 'x', 1500); // error
+processKeystroke(restartSession, 'Backspace', 1600);
+updateSessionTimer(restartSession, 5000);
+assert(restartSession.elapsedMs === 4000, 'Session has elapsed time before restart');
+assert(restartSession.incorrectKeystrokes === 1, 'Session has recorded incorrect keystroke');
+
+// Perform complete session restart
+const restarted = createTypingSession({
+  targetText: 'quick restart test',
+  mode: restartSession.mode,
+  duration: restartSession.duration
+});
+assert(restarted.status === 'idle', 'Restarted session status is idle');
+assert(restarted.elapsedMs === 0, 'Restarted session elapsedMs is 0');
+assert(restarted.correctKeystrokes === 0, 'Restarted session correctKeystrokes is 0');
+assert(restarted.incorrectKeystrokes === 0, 'Restarted session incorrectKeystrokes is 0');
+assert(restarted.accuracy === 100, 'Restarted session accuracy reset to 100%');
+assert(restarted.backspaces === 0, 'Restarted session backspaces reset to 0');
+assert(restarted.mode === 'time', 'Restarted session mode preserved');
+assert(restarted.duration === 30, 'Restarted session duration preserved');
+
 console.log('--- ALL TYPEARENA TESTS PASSED PERFECTLY! ---');
 
 

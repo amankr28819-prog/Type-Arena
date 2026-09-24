@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   GraduationCap,
   CheckCircle2,
@@ -12,6 +12,7 @@ import { generateTestText } from '../lib/generator';
 import { evaluateExam } from '../lib/metrics';
 import { useSettings } from '../context/SettingsContext';
 import { useTypingEngine } from '../hooks/useTypingEngine';
+import { useRestartShortcut } from '../hooks/useRestartShortcut';
 import { TypingArea } from '../components/typing/TypingArea';
 import { LiveStatsBar } from '../components/typing/LiveStatsBar';
 
@@ -99,6 +100,18 @@ export const ExamPage: React.FC = () => {
       difficulty: examConfig.strictStopOnError ? 'expert' : 'normal'
     },
     onTestComplete: handleTestComplete
+  });
+
+  const handleRestartExam = useCallback(() => {
+    setExamResult(null);
+    setIsExamActive(true);
+    engine.resetTest();
+    setIsFocused(true);
+  }, [engine]);
+
+  useRestartShortcut({
+    onRestart: handleRestartExam,
+    enabled: isExamActive || Boolean(examResult)
   });
 
   return (

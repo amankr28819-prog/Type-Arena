@@ -105,6 +105,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       <input
         ref={hiddenInputRef}
         type="text"
+        data-typing-input="true"
         className="absolute opacity-0 pointer-events-none w-0 h-0"
         autoCapitalize="off"
         autoComplete="off"

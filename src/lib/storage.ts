@@ -24,7 +24,7 @@ const STORAGE_KEY_PBS = 'typearena_pbs';
 const STORAGE_KEY_SUBLESSON_FALLBACK = 'typearena_sublessons_fallback';
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  themeId: 'midnight',
+  themeId: 'paper-clean',
   customThemes: [],
   layout: 'classic',
   fontFamily: "'JetBrains Mono', monospace",
